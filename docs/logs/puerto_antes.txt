@@ -1,0 +1,12 @@
+curl -I http://192.168.100.23
+Netid State  Recv-Q Send-Q        Local Address:Port Peer Address:PortProcess
+udp   UNCONN 0      0                127.0.0.54:53        0.0.0.0:*
+udp   UNCONN 0      0             127.0.0.53%lo:53        0.0.0.0:*
+udp   UNCONN 0      0      192.168.100.23%ens33:68        0.0.0.0:*
+udp   UNCONN 0      0                 127.0.0.1:323       0.0.0.0:*
+udp   UNCONN 0      0                     [::1]:323          [::]:*
+tcp   LISTEN 0      4096                0.0.0.0:22        0.0.0.0:*
+tcp   LISTEN 0      4096          127.0.0.53%lo:53        0.0.0.0:*
+tcp   LISTEN 0      4096             127.0.0.54:53        0.0.0.0:*
+tcp   LISTEN 0      4096                   [::]:22           [::]:*
+curl: (7) Failed to connect to 192.168.100.23 port 80 after 1 ms: Could not connect to server

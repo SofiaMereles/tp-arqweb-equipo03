@@ -1,0 +1,42 @@
+  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+                                 Dload  Upload  Total   Spent   Left   Speed
+  0      0   0      0   0      0      0      0                              0* Host bookstack.local:80 was resolved.
+* IPv6: (none)
+* IPv4: 127.0.0.1
+*   Trying 127.0.0.1:80...
+* Established connection to bookstack.local (127.0.0.1 port 80) from 127.0.0.1 port 32966 
+* using HTTP/1.x
+> GET / HTTP/1.1
+> Host: bookstack.local
+> User-Agent: curl/8.18.0
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 302 Found
+< Server: nginx/1.28.3 (Ubuntu)
+< Content-Type: text/html; charset=utf-8
+< Transfer-Encoding: chunked
+< Connection: keep-alive
+< Cache-Control: no-cache, no-store, private
+< Date: Sun, 13 Sep 2026 22:25:47 GMT
+< Location: http://192.168.100.23/login
+< Content-Security-Policy: frame-ancestors 'self'; frame-src 'self' https://*.draw.io https://*.youtube.com https://*.youtube-nocookie.com https://*.vimeo.com https://embed.diagrams.net; script-src http: https: 'nonce-9iaK6AmiqsIvOZGc67nsL2ZO' 'strict-dynamic'; style-src 'self' 'unsafe-inline' http: https:; img-src 'self' data: blob: http: https:; object-src 'self'; base-uri 'self'
+< Expires: Sun, 12 Jul 2015 19:01:00 GMT
+< Set-Cookie: XSRF-TOKEN=eyJpdiI6Ik9MeCtybWk2NU9saVl5dlhYK1hyNUE9PSIsInZhbHVlIjoiZXBudXAwcFdrQ2MrclVuOU40blgzRlR0SHB0Wmhpc0lJaDY4TStBa1dRQ09hSThteUIzRnlmMkJSNCt5NHg1U2VqMmhLUlFoWUdhTlRWSzZQUHZ1ckRzc21Pekw2YlJUUDZPazlHbDZQbzI0RFloR0NjMUdLMCs2WE4rRWdpZmkiLCJtYWMiOiI0ZmMzNDYyYTAxM2U0M2FlYzExYzM1MzFlNjgxYzgyZGU3NWY2NGNlZWI4YTE4ZTcwOWIwZTY4NjY0ODE0YTE1IiwidGFnIjoiIn0%3D; expires=Mon, 14 Sep 2026 00:25:47 GMT; Max-Age=7200; path=/; samesite=lax
+< Set-Cookie: bookstack_session=eyJpdiI6ImE2akxzY216V0VIaGx2R0dqeUNsQ1E9PSIsInZhbHVlIjoiYzVRWVRtczhlWVQzanh2RzVLa1JCRVF5WjhpRE5VQjdxRHhReFBacmR5aWRlejZaOFVQUi9UV3VQNnJiNXVRVzd6cUVLTHNaV1FSTUgvV255cUxVenc1TE00Yno1ZlNEZGhSdHAwdmh6SE5WZ0FTU28vN1J0N0ZBTHdKS0dGQU0iLCJtYWMiOiIxNWE5OTlkNTUyNDIwNzNiZWMyNjBhOGM2ZDAyYWU2ZGJmMjU3MmY1ZDFhMGFlY2FlNDllMjE5YmI0MDUzYWJlIiwidGFnIjoiIn0%3D; expires=Mon, 14 Sep 2026 00:25:47 GMT; Max-Age=7200; path=/; httponly; samesite=lax
+< 
+{ [366 bytes data]
+100    354   0    354   0      0  21149      0                              0100    354   0    354   0      0  21002      0                              0100    354   0    354   0      0  20872      0                              0
+* Connection #0 to host bookstack.local:80 left intact
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="refresh" content="0;url='http://192.168.100.23/login'" />
+
+        <title>Redirecting to http://192.168.100.23/login</title>
+    </head>
+    <body>
+        Redirecting to <a href="http://192.168.100.23/login">http://192.168.100.23/login</a>.
+    </body>
+</html>

@@ -1,0 +1,61 @@
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-09-13 22:09:03 UTC; 2min 45s ago
+ Invocation: 331ce52f07a14b2b8667d6bedd547429
+       Docs: man:nginx(8)
+    Process: 20069 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+    Process: 20071 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+   Main PID: 20073 (nginx)
+      Tasks: 3 (limit: 1427)
+     Memory: 3.1M (peak: 3.4M)
+        CPU: 36ms
+     CGroup: /system.slice/nginx.service
+             ├─20073 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"
+             ├─20074 "nginx: worker process"
+             └─20075 "nginx: worker process"
+
+sep 13 22:09:03 arqwebserver systemd[1]: Starting nginx.service - A high performance web server and a reverse proxy server...
+sep 13 22:09:03 arqwebserver systemd[1]: Started nginx.service - A high performance web server and a reverse proxy server.
+
+● php8.5-fpm.service - The PHP 8.5 FastCGI Process Manager
+     Loaded: loaded (/usr/lib/systemd/system/php8.5-fpm.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-09-13 22:01:44 UTC; 10min ago
+ Invocation: c59820e51989459a998a6bfe17c8a41e
+       Docs: man:php-fpm8.5(8)
+   Main PID: 19575 (php-fpm8.5)
+     Status: "Processes active: 0, idle: 2, Requests: 1, slow: 0, Traffic: 0.00req/sec"
+      Tasks: 3 (limit: 1427)
+     Memory: 40.6M (peak: 44.7M)
+        CPU: 535ms
+     CGroup: /system.slice/php8.5-fpm.service
+             ├─19575 "php-fpm: master process (/etc/php/8.5/fpm/php-fpm.conf)"
+             ├─19576 "php-fpm: pool www"
+             └─19577 "php-fpm: pool www"
+
+sep 13 22:01:44 arqwebserver systemd[1]: Starting php8.5-fpm.service - The PHP 8.5 FastCGI Process Manager...
+sep 13 22:01:44 arqwebserver systemd[1]: Started php8.5-fpm.service - The PHP 8.5 FastCGI Process Manager.
+
+● mariadb.service - MariaDB 11.8.6 database server
+     Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-09-13 21:09:10 UTC; 1h 2min ago
+ Invocation: bcd58a51032e44caa5ca2b201e33c9f7
+       Docs: man:mariadbd(8)
+             https://mariadb.com/kb/en/library/systemd/
+   Main PID: 9016 (mariadbd)
+     Status: "Taking your SQL requests now..."
+      Tasks: 10 (limit: 9418)
+     Memory: 112.6M (peak: 113M)
+        CPU: 4.255s
+     CGroup: /system.slice/mariadb.service
+             └─9016 /usr/sbin/mariadbd
+
+sep 13 21:09:09 arqwebserver mariadbd[9016]: 2026-09-13 21:09:09 0 [Note] Plugin 'FEEDBACK' is disabled.
+sep 13 21:09:09 arqwebserver mariadbd[9016]: 2026-09-13 21:09:09 0 [Note] Plugin 'wsrep-provider' is disabled.
+sep 13 21:09:09 arqwebserver mariadbd[9016]: 2026-09-13 21:09:09 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mariadb/ib_buffer_pool
+sep 13 21:09:09 arqwebserver mariadbd[9016]: 2026-09-13 21:09:09 0 [Note] InnoDB: Buffer pool(s) load completed at 260913 21:09:09
+sep 13 21:09:10 arqwebserver mariadbd[9016]: 2026-09-13 21:09:10 0 [Note] Server socket created on IP: '127.0.0.1', port: '3306'.
+sep 13 21:09:10 arqwebserver mariadbd[9016]: 2026-09-13 21:09:10 0 [Note] mariadbd: Event Scheduler: Loaded 0 events
+sep 13 21:09:10 arqwebserver mariadbd[9016]: 2026-09-13 21:09:10 0 [Note] /usr/sbin/mariadbd: ready for connections.
+sep 13 21:09:10 arqwebserver mariadbd[9016]: Version: '11.8.6-MariaDB-5ubuntu0.1 from Ubuntu'  socket: '/run/mysqld/mysqld.sock'  port: 3306  -- Please help get to 10k stars at https://github.com/MariaDB/Server
+sep 13 21:09:10 arqwebserver systemd[1]: Started mariadb.service - MariaDB 11.8.6 database server.
+sep 13 21:09:10 arqwebserver /etc/mysql/debian-start[9034]: Upgrading MariaDB tables if necessary.
