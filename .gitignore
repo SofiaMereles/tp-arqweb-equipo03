@@ -1,0 +1,7 @@
+*.key
+*.pem
+*.crt
+.env
+*.pcap
+.DS_Store
+Thumbs.db
