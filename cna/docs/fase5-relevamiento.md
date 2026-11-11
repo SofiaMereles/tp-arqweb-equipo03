@@ -2,13 +2,32 @@
 
 ## 1. Conectarse a la VM desde PowerShell
 
-La captura actual muestra `192.168.100.30` en ens33 y `192.168.145.129` en ens37. El informe anterior usaba `192.168.100.23`; no reutilizar esa dirección sin verificarla.
+La VM tiene dos adaptadores de red configurados en VMware:
 
-```powershell
-ssh arqweb@192.168.100.30
+| Interfaz | Modo | Comportamiento de la IP |
+|---|---|---|
+| `ens33` | En puente (automático) | Recibe una IP por DHCP de la red física a la que está conectado el anfitrión. Puede cambiar al pasar a otra red Wi-Fi o Ethernet, o al renovarse la concesión. |
+| `ens37` | Solo host (Host-only) | Pertenece a una red virtual privada entre el anfitrión y las VM conectadas a ella. No depende del Wi-Fi: en los relevamientos conservó `192.168.145.129` al cambiar la red física. Si usa DHCP, esa dirección no está garantizada como fija; puede cambiar si se reasigna la concesión o se reconfigura la red virtual de VMware. |
+
+Las direcciones son valores observados, no constantes del proyecto. En un relevamiento, `ens33` tenía `192.168.100.30`; en otro, `10.145.148.231`. Antes de conectarse, comprobar las direcciones vigentes desde la consola de Ubuntu:
+
+```bash
+ip -br addr
 ```
 
-Si esa interfaz no es accesible desde el anfitrión, probar la otra IP. Confirmar los modos de ambos adaptadores en VMware.
+Desde PowerShell, usar la IP vigente de una interfaz accesible. Por ejemplo, para el adaptador en puente, si conserva la dirección observada en el segundo relevamiento:
+
+```powershell
+ssh arqweb@10.145.148.231
+```
+
+Para el adaptador Solo host, si conserva su dirección:
+
+```powershell
+ssh arqweb@192.168.145.129
+```
+
+En las pruebas realizadas, SSH funcionó por `ens33`; la conectividad por `ens37` queda pendiente de verificar. El modo Solo host permite comunicación con el anfitrión, pero no garantiza que SSH sea accesible: también deben estar configurados el adaptador virtual de Windows, las rutas, el servicio y el firewall. Tener una IP asignada no demuestra por sí solo que la conexión funcione.
 
 ## 2. Relevar sistema y servicios dentro de Ubuntu
 
