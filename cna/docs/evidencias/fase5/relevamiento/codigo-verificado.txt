@@ -1,0 +1,2000 @@
+
+R01
+Archivo app/Entities/Models/Entity.php, lineas 80-134
+  80 
+  81     /**
+  82      * Set the table to be that used by all entities.
+  83      */
+  84     protected $table = 'entities';
+  85 
+  86     /**
+  87      * Set a custom query builder for entities.
+  88      */
+  89     protected static string $builder = EntityQueryBuilder::class;
+  90 
+  91     public static array $commonFields = [
+  92         'id',
+  93         'type',
+  94         'name',
+  95         'slug',
+  96         'book_id',
+  97         'chapter_id',
+  98         'priority',
+  99         'created_at',
+ 100         'updated_at',
+ 101         'deleted_at',
+ 102         'created_by',
+ 103         'updated_by',
+ 104         'owned_by',
+ 105     ];
+ 106 
+ 107     /**
+ 108      * Override the save method to also save the contents for convenience.
+ 109      */
+ 110     public function save(array $options = []): bool
+ 111     {
+ 112         /** @var EntityPageData|EntityContainerData $contents */
+ 113         $contents = $this->relatedData()->firstOrNew();
+ 114         $contentFields = $this->getContentsAttributes();
+ 115 
+ 116         foreach ($contentFields as $key => $value) {
+ 117             $contents->setAttribute($key, $value);
+ 118             unset($this->attributes[$key]);
+ 119         }
+ 120 
+ 121         $this->setAttribute('type', $this->getMorphClass());
+ 122         $result = parent::save($options);
+ 123         $contentsResult = true;
+ 124 
+ 125         if ($result && $contents->isDirty()) {
+ 126             $contentsFillData = $contents instanceof EntityPageData ? ['page_id' => $this->id] : ['entity_id' => $this->id, 'entity_type' => $this->getMorphClass()];
+ 127             $contents->forceFill($contentsFillData);
+ 128             $contentsResult = $contents->save();
+ 129             $this->touch();
+ 130         }
+ 131 
+ 132         $this->forceFill($contentFields);
+ 133 
+ 134         return $result && $contentsResult;
+Archivo app/Entities/Models/EntityPageData.php, lineas 1-25
+   1 <?php
+   2 
+   3 namespace BookStack\Entities\Models;
+   4 
+   5 use Illuminate\Database\Eloquent\Model;
+   6 
+   7 /**
+   8  * @property int    $page_id
+   9  */
+  10 class EntityPageData extends Model
+  11 {
+  12     public $timestamps = false;
+  13     protected $primaryKey = 'page_id';
+  14     public $incrementing = false;
+  15 
+  16     public static array $fields = [
+  17         'draft',
+  18         'template',
+  19         'revision_count',
+  20         'editor',
+  21         'html',
+  22         'text',
+  23         'markdown',
+  24     ];
+  25 }
+Archivo app/Entities/Models/EntityContainerData.php, lineas 1-50
+   1 <?php
+   2 
+   3 namespace BookStack\Entities\Models;
+   4 
+   5 use Illuminate\Database\Eloquent\Builder;
+   6 use Illuminate\Database\Eloquent\Model;
+   7 
+   8 /**
+   9  * @property int     $entity_id
+  10  * @property string  $entity_type
+  11  * @property string  $description
+  12  * @property string  $description_html
+  13  * @property ?int    $default_template_id
+  14  * @property ?int    $image_id
+  15  * @property ?int    $sort_rule_id
+  16  */
+  17 class EntityContainerData extends Model
+  18 {
+  19     public $timestamps = false;
+  20     protected $primaryKey = 'entity_id';
+  21     public $incrementing = false;
+  22 
+  23     public static array $fields = [
+  24         'description',
+  25         'description_html',
+  26         'default_template_id',
+  27         'image_id',
+  28         'sort_rule_id',
+  29     ];
+  30 
+  31     /**
+  32      * Override the default set keys for save query method to make it work with composite keys.
+  33      */
+  34     public function setKeysForSaveQuery($query): Builder
+  35     {
+  36         $query->where($this->getKeyName(), '=', $this->getKeyForSaveQuery())
+  37             ->where('entity_type', '=', $this->entity_type);
+  38 
+  39         return $query;
+  40     }
+  41 
+  42     /**
+  43      * Override the default set keys for a select query method to make it work with composite keys.
+  44      */
+  45     protected function setKeysForSelectQuery($query): Builder
+  46     {
+  47         $query->where($this->getKeyName(), '=', $this->getKeyForSelectQuery())
+  48             ->where('entity_type', '=', $this->entity_type);
+  49 
+  50         return $query;
+Archivo app/Entities/Models/EntityScope.php, lineas 14-28
+  14      */
+  15     public function apply(Builder $builder, Model $model): void
+  16     {
+  17         $builder = $builder->where('type', '=', $model->getMorphClass());
+  18         $table = $model->getTable();
+  19         if ($model instanceof Page) {
+  20             $builder->leftJoin('entity_page_data', 'entity_page_data.page_id', '=', "{$table}.id");
+  21         } else {
+  22             $builder->leftJoin('entity_container_data', function (JoinClause $join) use ($model, $table) {
+  23                 $join->on('entity_container_data.entity_id', '=', "{$table}.id")
+  24                     ->where('entity_container_data.entity_type', '=', $model->getMorphClass());
+  25             });
+  26         }
+  27     }
+  28 }
+Archivo app/Entities/Models/EntityQueryBuilder.php, lineas 10-22
+  10     /**
+  11      * Create a new Eloquent query builder instance.
+  12      */
+  13     public function __construct(QueryBuilder $query)
+  14     {
+  15         parent::__construct($query);
+  16 
+  17         $this->withGlobalScope('entity', new EntityScope());
+  18     }
+  19 
+  20     public function withoutGlobalScope($scope): static
+  21     {
+  22         // Prevent removal of the entity scope
+
+R02
+Archivo app/Entities/Repos/BaseRepo.php, lineas 42-106
+  42     public function create(Entity $entity, array $input): Entity
+  43     {
+  44         $entity = (clone $entity)->refresh();
+  45         $entity->fill($input);
+  46         $entity->forceFill([
+  47             'created_by' => user()->id,
+  48             'updated_by' => user()->id,
+  49             'owned_by'   => user()->id,
+  50         ]);
+  51         $this->refreshSlug($entity);
+  52 
+  53         if ($entity instanceof HasDescriptionInterface) {
+  54             $this->updateDescription($entity, $input);
+  55         }
+  56 
+  57         $entity->save();
+  58 
+  59         if (isset($input['tags'])) {
+  60             $this->tagRepo->saveTagsToEntity($entity, $input['tags']);
+  61         }
+  62 
+  63         $entity->refresh();
+  64         $entity->rebuildPermissions();
+  65         $entity->indexForSearch();
+  66 
+  67         $this->referenceStore->updateForEntity($entity);
+  68 
+  69         return $entity;
+  70     }
+  71 
+  72     /**
+  73      * Update the given entity.
+  74      * @template T of Entity
+  75      * @param T $entity
+  76      * @return T
+  77      */
+  78     public function update(Entity $entity, array $input): Entity
+  79     {
+  80         $oldUrl = $entity->getUrl();
+  81 
+  82         $entity->fill($input);
+  83         $entity->updated_by = user()->id;
+  84 
+  85         if ($entity->isDirty('name') || empty($entity->slug)) {
+  86             $this->refreshSlug($entity);
+  87         }
+  88 
+  89         if ($entity instanceof HasDescriptionInterface) {
+  90             $this->updateDescription($entity, $input);
+  91         }
+  92 
+  93         $entity->save();
+  94 
+  95         if (isset($input['tags'])) {
+  96             $this->tagRepo->saveTagsToEntity($entity, $input['tags']);
+  97             $entity->touch();
+  98         }
+  99 
+ 100         $entity->indexForSearch();
+ 101         $this->referenceStore->updateForEntity($entity);
+ 102 
+ 103         if ($oldUrl !== $entity->getUrl()) {
+ 104             $this->referenceUpdater->updateEntityReferences($entity, $oldUrl);
+ 105         }
+ 106 
+Archivo app/Entities/Repos/PageRepo.php, lineas 119-149
+ 119     public function update(Page $page, array $input): Page
+ 120     {
+ 121         // Hold the old details to compare later
+ 122         $oldName = $page->name;
+ 123         $oldHtml = $page->html;
+ 124         $oldMarkdown = $page->markdown;
+ 125 
+ 126         $this->updateTemplateStatusAndContentFromInput($page, $input);
+ 127         $page = $this->baseRepo->update($page, $input);
+ 128 
+ 129         // Update with new details
+ 130         $page->revision_count++;
+ 131         $page->save();
+ 132 
+ 133         // Remove all update drafts for this user and page.
+ 134         $this->revisionRepo->deleteDraftsForCurrentUser($page);
+ 135 
+ 136         // Save a revision after updating
+ 137         $summary = trim($input['summary'] ?? '');
+ 138         $htmlChanged = isset($input['html']) && $input['html'] !== $oldHtml;
+ 139         $nameChanged = isset($input['name']) && $input['name'] !== $oldName;
+ 140         $markdownChanged = isset($input['markdown']) && $input['markdown'] !== $oldMarkdown;
+ 141         if ($htmlChanged || $nameChanged || $markdownChanged || $summary) {
+ 142             $this->revisionRepo->storeNewForPage($page, $summary);
+ 143         }
+ 144 
+ 145         Activity::add(ActivityType::PAGE_UPDATE, $page);
+ 146         $this->baseRepo->sortParent($page);
+ 147 
+ 148         return $page;
+ 149     }
+
+R03
+Archivo app/Entities/Repos/RevisionRepo.php, lineas 19-90
+  19     public function deleteDraftsForCurrentUser(Page $page): void
+  20     {
+  21         $this->queries->latestCurrentUserDraftsForPageId($page->id)->delete();
+  22     }
+  23 
+  24     /**
+  25      * Get a user update_draft page revision to update for the given page.
+  26      * Checks for an existing revision before providing a fresh one.
+  27      */
+  28     public function getNewDraftForCurrentUser(Page $page): PageRevision
+  29     {
+  30         $draft = $this->queries->findLatestCurrentUserDraftsForPageId($page->id);
+  31 
+  32         if ($draft) {
+  33             return $draft;
+  34         }
+  35 
+  36         $draft = new PageRevision();
+  37         $draft->page_id = $page->id;
+  38         $draft->slug = $page->slug;
+  39         $draft->book_slug = $page->book->slug;
+  40         $draft->created_by = user()->id;
+  41         $draft->type = 'update_draft';
+  42 
+  43         return $draft;
+  44     }
+  45 
+  46     /**
+  47      * Store a new revision in the system for the given page.
+  48      */
+  49     public function storeNewForPage(Page $page, ?string $summary = null): PageRevision
+  50     {
+  51         $revision = new PageRevision();
+  52 
+  53         $revision->name = $page->name;
+  54         $revision->html = $page->html;
+  55         $revision->markdown = $page->markdown;
+  56         $revision->text = $page->text;
+  57         $revision->page_id = $page->id;
+  58         $revision->slug = $page->slug;
+  59         $revision->book_slug = $page->book->slug;
+  60         $revision->created_by = user()->id;
+  61         $revision->created_at = $page->updated_at;
+  62         $revision->type = 'version';
+  63         $revision->summary = $summary;
+  64         $revision->revision_number = $page->revision_count;
+  65         $revision->save();
+  66 
+  67         $this->deleteOldRevisions($page);
+  68 
+  69         return $revision;
+  70     }
+  71 
+  72     /**
+  73      * Delete old revisions, for the given page, from the system.
+  74      */
+  75     protected function deleteOldRevisions(Page $page): void
+  76     {
+  77         $revisionLimit = config('app.revision_limit');
+  78         if ($revisionLimit === false) {
+  79             return;
+  80         }
+  81 
+  82         $revisionsToDelete = PageRevision::query()
+  83             ->where('page_id', '=', $page->id)
+  84             ->orderBy('created_at', 'desc')
+  85             ->skip(intval($revisionLimit))
+  86             ->take(10)
+  87             ->get(['id']);
+  88 
+  89         if ($revisionsToDelete->count() > 0) {
+  90             PageRevision::query()->whereIn('id', $revisionsToDelete->pluck('id'))->delete();
+
+R04
+Archivo app/Search/SearchIndex.php, lineas 35-115
+  35     public function indexEntity(Entity $entity): void
+  36     {
+  37         $this->deleteEntityTerms($entity);
+  38         $terms = $this->entityToTermDataArray($entity);
+  39         $this->insertTerms($terms);
+  40     }
+  41 
+  42     /**
+  43      * Index multiple Entities at once.
+  44      *
+  45      * @param Entity[] $entities
+  46      */
+  47     public function indexEntities(array $entities): void
+  48     {
+  49         $terms = [];
+  50         foreach ($entities as $entity) {
+  51             $entityTerms = $this->entityToTermDataArray($entity);
+  52             array_push($terms, ...$entityTerms);
+  53         }
+  54 
+  55         $this->insertTerms($terms);
+  56     }
+  57 
+  58     /**
+  59      * Delete and re-index the terms for all entities in the system.
+  60      * Can take a callback which is used for reporting progress.
+  61      * Callback receives three arguments:
+  62      * - An instance of the model being processed
+  63      * - The number that have been processed so far.
+  64      * - The total number of that model to be processed.
+  65      *
+  66      * @param callable(Entity, int, int):void|null $progressCallback
+  67      */
+  68     public function indexAllEntities(?callable $progressCallback = null): void
+  69     {
+  70         SearchTerm::query()->truncate();
+  71 
+  72         foreach ($this->entityProvider->all() as $entityModel) {
+  73             $indexContentField = $entityModel instanceof Page ? 'html' : 'description';
+  74             $selectFields = ['id', 'name', $indexContentField];
+  75             /** @var Builder<Entity> $query */
+  76             $query = $entityModel->newQuery();
+  77             $total = $query->withTrashed()->count();
+  78             $chunkSize = 250;
+  79             $processed = 0;
+  80 
+  81             $chunkCallback = function (Collection $entities) use ($progressCallback, &$processed, $total, $chunkSize, $entityModel) {
+  82                 $this->indexEntities($entities->all());
+  83                 $processed = min($processed + $chunkSize, $total);
+  84 
+  85                 if (is_callable($progressCallback)) {
+  86                     $progressCallback($entityModel, $processed, $total);
+  87                 }
+  88             };
+  89 
+  90             $entityModel->newQuery()
+  91                 ->select($selectFields)
+  92                 ->with(['tags:id,name,value,entity_id,entity_type'])
+  93                 ->chunk($chunkSize, $chunkCallback);
+  94         }
+  95     }
+  96 
+  97     /**
+  98      * Delete related Entity search terms.
+  99      */
+ 100     public function deleteEntityTerms(Entity $entity): void
+ 101     {
+ 102         $entity->searchTerms()->delete();
+ 103     }
+ 104 
+ 105     /**
+ 106      * Insert the given terms into the database.
+ 107      * Chunks through the given terms to remain within database limits.
+ 108      * @param array[] $terms
+ 109      */
+ 110     protected function insertTerms(array $terms): void
+ 111     {
+ 112         $chunkedTerms = array_chunk($terms, 500);
+ 113         foreach ($chunkedTerms as $termChunk) {
+ 114             SearchTerm::query()->insert($termChunk);
+ 115         }
+Archivo app/Search/SearchIndex.php, lineas 274-296
+ 274     }
+ 275 
+ 276     /**
+ 277      * For the given term data arrays, Merge their contents by term
+ 278      * while combining any scores.
+ 279      *
+ 280      * @param array<string, float>[] ...$scoreMaps
+ 281      *
+ 282      * @return array<string, float>
+ 283      */
+ 284     protected function mergeTermScoreMaps(...$scoreMaps): array
+ 285     {
+ 286         $mergedMap = [];
+ 287 
+ 288         foreach ($scoreMaps as $scoreMap) {
+ 289             foreach ($scoreMap as $term => $score) {
+ 290                 $mergedMap[$term] = ($mergedMap[$term] ?? 0) + $score;
+ 291             }
+ 292         }
+ 293 
+ 294         return $mergedMap;
+ 295     }
+ 296 }
+Archivo app/Search/SearchRunner.php, lineas 155-185
+ 155     protected function applyTermSearch(EloquentBuilder $entityQuery, SearchOptions $options, array $entityTypes): void
+ 156     {
+ 157         $terms = $options->searches->toValueArray();
+ 158         if (count($terms) === 0) {
+ 159             return;
+ 160         }
+ 161 
+ 162         $scoredTerms = $this->getTermAdjustments($options);
+ 163         $scoreSelect = $this->selectForScoredTerms($scoredTerms);
+ 164 
+ 165         $subQuery = DB::table('search_terms')->select([
+ 166             'entity_id',
+ 167             'entity_type',
+ 168             DB::raw($scoreSelect['statement']),
+ 169         ]);
+ 170 
+ 171         $subQuery->addBinding($scoreSelect['bindings'], 'select');
+ 172         $subQuery->where(function (Builder $query) use ($terms) {
+ 173             foreach ($terms as $inputTerm) {
+ 174                 $escapedTerm = str_replace('\\', '\\\\', $inputTerm);
+ 175                 $query->orWhere('term', 'like', $escapedTerm . '%');
+ 176             }
+ 177         });
+ 178         $subQuery->groupBy('entity_type', 'entity_id');
+ 179 
+ 180         $entityQuery->joinSub($subQuery, 's', function (JoinClause $join) {
+ 181             $join->on('s.entity_id', '=', 'entities.id')
+ 182                 ->on('s.entity_type', '=', 'entities.type');
+ 183         });
+ 184         $entityQuery->addSelect('s.score');
+ 185         $entityQuery->orderBy('score', 'desc');
+Archivo app/Search/SearchTerm.php, lineas 1-21
+   1 <?php
+   2 
+   3 namespace BookStack\Search;
+   4 
+   5 use BookStack\App\Model;
+   6 
+   7 class SearchTerm extends Model
+   8 {
+   9     protected $fillable = ['term', 'entity_id', 'entity_type', 'score'];
+  10     public $timestamps = false;
+  11 
+  12     /**
+  13      * Get the entity that this term belongs to.
+  14      *
+  15      * @return \Illuminate\Database\Eloquent\Relations\MorphTo
+  16      */
+  17     public function entity()
+  18     {
+  19         return $this->morphTo('entity');
+  20     }
+  21 }
+Archivo app/Entities/Models/Entity.php, lineas 395-408
+ 395     {
+ 396         app()->make(JointPermissionBuilder::class)->rebuildForEntity(clone $this);
+ 397     }
+ 398 
+ 399     /**
+ 400      * Index the current entity for search.
+ 401      */
+ 402     public function indexForSearch(): void
+ 403     {
+ 404         app()->make(SearchIndex::class)->indexEntity(clone $this);
+ 405     }
+ 406 
+ 407     /**
+ 408      * {@inheritdoc}
+
+R05
+Archivo app/Activity/Tools/ActivityLogger.php, lineas 24-105
+  24     /**
+  25      * Add a generic activity event to the database.
+  26      */
+  27     public function add(string $type, string|Loggable $detail = ''): void
+  28     {
+  29         $detailToStore = ($detail instanceof Loggable) ? $detail->logDescriptor() : $detail;
+  30 
+  31         $activity = $this->newActivityForUser($type);
+  32         $activity->detail = $detailToStore;
+  33 
+  34         if ($detail instanceof Entity) {
+  35             $activity->loggable_id = $detail->id;
+  36             $activity->loggable_type = $detail->getMorphClass();
+  37         }
+  38 
+  39         $activity->save();
+  40 
+  41         $this->setNotification($type);
+  42         $this->dispatchWebhooks($type, $detail);
+  43         $this->notifications->handle($activity, $detail, user());
+  44         Theme::dispatch(ThemeEvents::ACTIVITY_LOGGED, $type, $detail);
+  45     }
+  46 
+  47     /**
+  48      * Get a new activity instance for the current user.
+  49      */
+  50     protected function newActivityForUser(string $type): Activity
+  51     {
+  52         return (new Activity())->forceFill([
+  53             'type'     => strtolower($type),
+  54             'user_id'  => user()->id,
+  55             'ip'       => IpFormatter::fromCurrentRequest()->format(),
+  56         ]);
+  57     }
+  58 
+  59     /**
+  60      * Removes the entity attachment from each of its activities
+  61      * and instead uses the 'extra' field with the entities name.
+  62      * Used when an entity is deleted.
+  63      */
+  64     public function removeEntity(Entity $entity): void
+  65     {
+  66         $entity->activity()->update([
+  67             'detail'         => $entity->name,
+  68             'loggable_id'    => null,
+  69             'loggable_type'  => null,
+  70         ]);
+  71     }
+  72 
+  73     /**
+  74      * Flashes a notification message to the session if an appropriate message is available.
+  75      */
+  76     protected function setNotification(string $type): void
+  77     {
+  78         $notificationTextKey = 'activities.' . $type . '_notification';
+  79         if (trans()->has($notificationTextKey)) {
+  80             $message = trans($notificationTextKey);
+  81             session()->flash('success', $message);
+  82         }
+  83     }
+  84 
+  85     protected function dispatchWebhooks(string $type, string|Loggable $detail): void
+  86     {
+  87         $webhooks = Webhook::query()
+  88             ->whereHas('trackedEvents', function (Builder $query) use ($type) {
+  89                 $query->where('event', '=', $type)
+  90                     ->orWhere('event', '=', 'all');
+  91             })
+  92             ->where('active', '=', true)
+  93             ->get();
+  94 
+  95         foreach ($webhooks as $webhook) {
+  96             dispatch(new DispatchWebhookJob($webhook, $type, $detail));
+  97         }
+  98     }
+  99 
+ 100     /**
+ 101      * Log out a failed login attempt, Providing the given username
+ 102      * as part of the message if the '%u' string is used.
+ 103      */
+ 104     public function logFailedLogin(string $username): void
+ 105     {
+Archivo app/Activity/Models/Activity.php, lineas 26-54
+  26 class Activity extends Model
+  27 {
+  28     use HasFactory;
+  29 
+  30     /**
+  31      * Get the loggable model related to this activity.
+  32      * Currently only used for entities (previously entity_[id/type] columns).
+  33      * Could be used for others but will need an audit of uses where assumed
+  34      * to be entities.
+  35      */
+  36     public function loggable(): MorphTo
+  37     {
+  38         return $this->morphTo('loggable');
+  39     }
+  40 
+  41     /**
+  42      * Get the user this activity relates to.
+  43      */
+  44     public function user(): BelongsTo
+  45     {
+  46         return $this->belongsTo(User::class);
+  47     }
+  48 
+  49     public function jointPermissions(): HasMany
+  50     {
+  51         return $this->hasMany(JointPermission::class, 'entity_id', 'loggable_id')
+  52             ->whereColumn('activities.loggable_type', '=', 'joint_permissions.entity_type');
+  53     }
+  54 
+Archivo app/Activity/ActivityQueries.php, lineas 28-97
+  28     public function latest(int $count = 20, int $page = 0): array
+  29     {
+  30         $activityList = $this->permissions
+  31             ->restrictEntityRelationQuery(Activity::query(), 'activities', 'loggable_id', 'loggable_type')
+  32             ->orderBy('created_at', 'desc')
+  33             ->with(['user'])
+  34             ->skip($count * $page)
+  35             ->take($count)
+  36             ->get();
+  37 
+  38         $this->listLoader->loadIntoRelations($activityList->all(), 'loggable', false);
+  39 
+  40         return $this->filterSimilar($activityList);
+  41     }
+  42 
+  43     /**
+  44      * Gets the latest activity for an entity, Filtering out similar
+  45      * items to prevent a message activity list.
+  46      */
+  47     public function entityActivity(Entity $entity, int $count = 20, int $page = 1): array
+  48     {
+  49         /** @var array<string, int[]> $queryIds */
+  50         $queryIds = [$entity->getMorphClass() => [$entity->id]];
+  51 
+  52         if ($entity instanceof Book) {
+  53             $queryIds[(new Chapter())->getMorphClass()] = $entity->chapters()->scopes('visible')->pluck('id');
+  54         }
+  55         if ($entity instanceof Book || $entity instanceof Chapter) {
+  56             $queryIds[(new Page())->getMorphClass()] = $entity->pages()->scopes('visible')->pluck('id');
+  57         }
+  58 
+  59         $query = Activity::query();
+  60         $query->where(function (Builder $query) use ($queryIds) {
+  61             foreach ($queryIds as $morphClass => $idArr) {
+  62                 $query->orWhere(function (Builder $innerQuery) use ($morphClass, $idArr) {
+  63                     $innerQuery->where('loggable_type', '=', $morphClass)
+  64                         ->whereIn('loggable_id', $idArr);
+  65                 });
+  66             }
+  67         });
+  68 
+  69         $activity = $query->orderBy('created_at', 'desc')
+  70             ->with(['loggable' => function (Relation $query) {
+  71                 /** @var MorphTo<Entity, Activity> $query */
+  72                 $query->withTrashed();
+  73             }, 'user.avatar'])
+  74             ->skip($count * ($page - 1))
+  75             ->take($count)
+  76             ->get();
+  77 
+  78         return $this->filterSimilar($activity);
+  79     }
+  80 
+  81     /**
+  82      * Get the latest activity for a user, Filtering out similar items.
+  83      */
+  84     public function userActivity(User $user, int $count = 20, int $page = 0): array
+  85     {
+  86         $activityList = $this->permissions
+  87             ->restrictEntityRelationQuery(Activity::query(), 'activities', 'loggable_id', 'loggable_type')
+  88             ->orderBy('created_at', 'desc')
+  89             ->where('user_id', '=', $user->id)
+  90             ->skip($count * $page)
+  91             ->take($count)
+  92             ->get();
+  93 
+  94         return $this->filterSimilar($activityList);
+  95     }
+  96 
+  97     /**
+
+R06
+Archivo app/Exports/Controllers/PageExportApiController.php, lineas 14-79
+  14     public function __construct(
+  15         protected ExportFormatter $exportFormatter,
+  16         protected PageQueries $queries,
+  17     ) {
+  18         $this->middleware(Permission::ContentExport->middleware());
+  19     }
+  20 
+  21     /**
+  22      * Export a page as a PDF file.
+  23      *
+  24      * @throws Throwable
+  25      */
+  26     public function exportPdf(int $id)
+  27     {
+  28         $page = $this->queries->findVisibleByIdOrFail($id);
+  29         $pdfContent = $this->exportFormatter->pageToPdf($page);
+  30 
+  31         return $this->download()->directly($pdfContent, $page->slug . '.pdf');
+  32     }
+  33 
+  34     /**
+  35      * Export a page as a contained HTML file.
+  36      *
+  37      * @throws Throwable
+  38      */
+  39     public function exportHtml(int $id)
+  40     {
+  41         $page = $this->queries->findVisibleByIdOrFail($id);
+  42         $htmlContent = $this->exportFormatter->pageToContainedHtml($page);
+  43 
+  44         return $this->download()->directly($htmlContent, $page->slug . '.html');
+  45     }
+  46 
+  47     /**
+  48      * Export a page as a plain text file.
+  49      */
+  50     public function exportPlainText(int $id)
+  51     {
+  52         $page = $this->queries->findVisibleByIdOrFail($id);
+  53         $textContent = $this->exportFormatter->pageToPlainText($page);
+  54 
+  55         return $this->download()->directly($textContent, $page->slug . '.txt');
+  56     }
+  57 
+  58     /**
+  59      * Export a page as a markdown file.
+  60      */
+  61     public function exportMarkdown(int $id)
+  62     {
+  63         $page = $this->queries->findVisibleByIdOrFail($id);
+  64         $markdown = $this->exportFormatter->pageToMarkdown($page);
+  65 
+  66         return $this->download()->directly($markdown, $page->slug . '.md');
+  67     }
+  68 
+  69     /**
+  70      * Export a page as a contained ZIP file.
+  71      */
+  72     public function exportZip(int $id, ZipExportBuilder $builder)
+  73     {
+  74         $page = $this->queries->findVisibleByIdOrFail($id);
+  75         $zip = $builder->buildForPage($page);
+  76 
+  77         return $this->download()->streamedFileDirectly($zip, $page->slug . '.zip', true);
+  78     }
+  79 }
+Archivo app/Exports/Controllers/BookExportApiController.php, lineas 14-79
+  14     public function __construct(
+  15         protected ExportFormatter $exportFormatter,
+  16         protected BookQueries $queries,
+  17     ) {
+  18         $this->middleware(Permission::ContentExport->middleware());
+  19     }
+  20 
+  21     /**
+  22      * Export a book as a PDF file.
+  23      *
+  24      * @throws Throwable
+  25      */
+  26     public function exportPdf(int $id)
+  27     {
+  28         $book = $this->queries->findVisibleByIdOrFail($id);
+  29         $pdfContent = $this->exportFormatter->bookToPdf($book);
+  30 
+  31         return $this->download()->directly($pdfContent, $book->slug . '.pdf');
+  32     }
+  33 
+  34     /**
+  35      * Export a book as a contained HTML file.
+  36      *
+  37      * @throws Throwable
+  38      */
+  39     public function exportHtml(int $id)
+  40     {
+  41         $book = $this->queries->findVisibleByIdOrFail($id);
+  42         $htmlContent = $this->exportFormatter->bookToContainedHtml($book);
+  43 
+  44         return $this->download()->directly($htmlContent, $book->slug . '.html');
+  45     }
+  46 
+  47     /**
+  48      * Export a book as a plain text file.
+  49      */
+  50     public function exportPlainText(int $id)
+  51     {
+  52         $book = $this->queries->findVisibleByIdOrFail($id);
+  53         $textContent = $this->exportFormatter->bookToPlainText($book);
+  54 
+  55         return $this->download()->directly($textContent, $book->slug . '.txt');
+  56     }
+  57 
+  58     /**
+  59      * Export a book as a markdown file.
+  60      */
+  61     public function exportMarkdown(int $id)
+  62     {
+  63         $book = $this->queries->findVisibleByIdOrFail($id);
+  64         $markdown = $this->exportFormatter->bookToMarkdown($book);
+  65 
+  66         return $this->download()->directly($markdown, $book->slug . '.md');
+  67     }
+  68 
+  69     /**
+  70      * Export a book as a contained ZIP export file.
+  71      */
+  72     public function exportZip(int $id, ZipExportBuilder $builder)
+  73     {
+  74         $book = $this->queries->findVisibleByIdOrFail($id);
+  75         $zip = $builder->buildForBook($book);
+  76 
+  77         return $this->download()->streamedFileDirectly($zip, $book->slug . '.zip', true);
+  78     }
+  79 }
+Archivo app/Exports/ExportFormatter.php, lineas 93-146
+  93     public function pageToPdf(Page $page): string
+  94     {
+  95         $page->html = (new PageContent($page))->render();
+  96         $html = view('exports.page', [
+  97             'page'   => $page,
+  98             'format' => 'pdf',
+  99             'engine' => $this->pdfGenerator->getActiveEngine(),
+ 100             'locale' => user()->getLocale(),
+ 101         ])->render();
+ 102 
+ 103         return $this->htmlToPdf($html);
+ 104     }
+ 105 
+ 106     /**
+ 107      * Convert a chapter to a PDF file.
+ 108      *
+ 109      * @throws Throwable
+ 110      */
+ 111     public function chapterToPdf(Chapter $chapter): string
+ 112     {
+ 113         $pages = $chapter->getVisiblePages();
+ 114         $pages->each(function ($page) {
+ 115             $page->html = (new PageContent($page))->render();
+ 116         });
+ 117 
+ 118         $html = view('exports.chapter', [
+ 119             'chapter' => $chapter,
+ 120             'pages'   => $pages,
+ 121             'format'  => 'pdf',
+ 122             'engine'  => $this->pdfGenerator->getActiveEngine(),
+ 123             'locale'  => user()->getLocale(),
+ 124         ])->render();
+ 125 
+ 126         return $this->htmlToPdf($html);
+ 127     }
+ 128 
+ 129     /**
+ 130      * Convert a book to a PDF file.
+ 131      *
+ 132      * @throws Throwable
+ 133      */
+ 134     public function bookToPdf(Book $book): string
+ 135     {
+ 136         $bookTree = (new BookContents($book))->getTree(false, true);
+ 137         $html = view('exports.book', [
+ 138             'book'         => $book,
+ 139             'bookChildren' => $bookTree,
+ 140             'format'       => 'pdf',
+ 141             'engine'       => $this->pdfGenerator->getActiveEngine(),
+ 142             'locale'       => user()->getLocale(),
+ 143         ])->render();
+ 144 
+ 145         return $this->htmlToPdf($html);
+ 146     }
+Archivo app/Exports/ExportFormatter.php, lineas 295-346
+ 295     public function pageToMarkdown(Page $page): string
+ 296     {
+ 297         if ($page->markdown) {
+ 298             return '# ' . $page->name . "\n\n" . $page->markdown;
+ 299         }
+ 300 
+ 301         return '# ' . $page->name . "\n\n" . (new HtmlToMarkdown($page->html))->convert();
+ 302     }
+ 303 
+ 304     /**
+ 305      * Convert a chapter to a Markdown file.
+ 306      */
+ 307     public function chapterToMarkdown(Chapter $chapter): string
+ 308     {
+ 309         $text = '# ' . $chapter->name . "\n\n";
+ 310 
+ 311         $description = (new HtmlToMarkdown($chapter->descriptionInfo()->getHtml()))->convert();
+ 312         if ($description) {
+ 313             $text .= $description . "\n\n";
+ 314         }
+ 315 
+ 316         foreach ($chapter->getVisiblePages() as $page) {
+ 317             $text .= $this->pageToMarkdown($page) . "\n\n";
+ 318         }
+ 319 
+ 320         return trim($text);
+ 321     }
+ 322 
+ 323     /**
+ 324      * Convert a book into a plain text string.
+ 325      */
+ 326     public function bookToMarkdown(Book $book): string
+ 327     {
+ 328         $bookTree = (new BookContents($book))->getTree(false, true);
+ 329         $text = '# ' . $book->name . "\n\n";
+ 330 
+ 331         $description = (new HtmlToMarkdown($book->descriptionInfo()->getHtml()))->convert();
+ 332         if ($description) {
+ 333             $text .= $description . "\n\n";
+ 334         }
+ 335 
+ 336         foreach ($bookTree as $bookChild) {
+ 337             if ($bookChild instanceof Chapter) {
+ 338                 $text .= $this->chapterToMarkdown($bookChild) . "\n\n";
+ 339             } else {
+ 340                 $text .= $this->pageToMarkdown($bookChild) . "\n\n";
+ 341             }
+ 342         }
+ 343 
+ 344         return trim($text);
+ 345     }
+ 346 }
+Archivo app/Entities/Tools/BookContents.php, lineas 43-105
+  43         $pages = $this->getPages($showDrafts, $renderPages);
+  44         $chapters = $this->book->chapters()->scopes('visible')->get();
+  45         $all = collect()->concat($pages)->concat($chapters);
+  46         $chapterMap = $chapters->keyBy('id');
+  47         $lonePages = collect();
+  48 
+  49         $pages->groupBy('chapter_id')->each(function ($pages, $chapter_id) use ($chapterMap, &$lonePages) {
+  50             $chapter = $chapterMap->get($chapter_id);
+  51             if ($chapter) {
+  52                 $chapter->setAttribute('visible_pages', collect($pages)->sortBy($this->bookChildSortFunc()));
+  53             } else {
+  54                 $lonePages = $lonePages->concat($pages);
+  55             }
+  56         });
+  57 
+  58         $chapters->whereNull('visible_pages')->each(function (Chapter $chapter) {
+  59             $chapter->setAttribute('visible_pages', collect([]));
+  60         });
+  61 
+  62         $all->each(function (Entity $entity) use ($renderPages) {
+  63             $entity->setRelation('book', $this->book);
+  64 
+  65             if ($renderPages && $entity instanceof Page) {
+  66                 $entity->html = (new PageContent($entity))->render();
+  67             }
+  68         });
+  69 
+  70         return collect($chapters)->concat($lonePages)->sortBy($this->bookChildSortFunc());
+  71     }
+  72 
+  73     /**
+  74      * Function for providing a sorting score for an entity in relation to the
+  75      * other items within the book.
+  76      */
+  77     protected function bookChildSortFunc(): callable
+  78     {
+  79         return function (Entity $entity) {
+  80             if ($entity->getAttribute('draft') ?? false) {
+  81                 return -100;
+  82             }
+  83 
+  84             return $entity->getAttribute('priority') ?? 0;
+  85         };
+  86     }
+  87 
+  88     /**
+  89      * Get the visible pages within this book.
+  90      */
+  91     protected function getPages(bool $showDrafts = false, bool $getPageContent = false): Collection
+  92     {
+  93         if ($getPageContent) {
+  94             $query = $this->queries->pages->visibleWithContents();
+  95         } else {
+  96             $query = $this->queries->pages->visibleForList();
+  97         }
+  98 
+  99         if (!$showDrafts) {
+ 100             $query->where('draft', '=', false);
+ 101         }
+ 102 
+ 103         return $query->where('book_id', '=', $this->book->id)->get();
+ 104     }
+ 105 }
+Archivo app/Exports/ZipExports/Models/ZipExportPage.php, lineas 40-59
+  40     {
+  41         $instance = new self();
+  42         $instance->id = $model->id;
+  43         $instance->name = $model->name;
+  44         $instance->html = (new PageContent($model))->render();
+  45         $instance->priority = $model->priority;
+  46 
+  47         if (!empty($model->markdown)) {
+  48             $instance->markdown = $model->markdown;
+  49         }
+  50 
+  51         $instance->tags = ZipExportTag::fromModelArray($model->tags()->get()->all());
+  52         $instance->attachments = ZipExportAttachment::fromModelArray($model->attachments()->get()->all(), $files);
+  53 
+  54         return $instance;
+  55     }
+  56 
+  57     /**
+  58      * @param Page[] $pageArray
+  59      * @return self[]
+Archivo app/Exports/ZipExports/ZipExportFiles.php, lineas 82-107
+  82     /**
+  83      * Extract each of the ZIP export-tracked files.
+  84      * Calls the given callback for each tracked file, passing a temporary
+  85      * file reference of the file contents, and the zip-local tracked reference.
+  86      */
+  87     public function extractEach(callable $callback): void
+  88     {
+  89         foreach ($this->attachmentRefsById as $attachmentId => $ref) {
+  90             $attachment = Attachment::query()->find($attachmentId);
+  91             $stream = $this->attachmentService->streamAttachmentFromStorage($attachment);
+  92             $tmpFile = tempnam(sys_get_temp_dir(), 'bszipfile-');
+  93             $tmpFileStream = fopen($tmpFile, 'w');
+  94             stream_copy_to_stream($stream, $tmpFileStream);
+  95             $callback($tmpFile, $ref);
+  96         }
+  97 
+  98         foreach ($this->imageRefsById as $imageId => $ref) {
+  99             $image = Image::query()->find($imageId);
+ 100             $stream = $this->imageService->getImageStream($image);
+ 101             $tmpFile = tempnam(sys_get_temp_dir(), 'bszipimage-');
+ 102             $tmpFileStream = fopen($tmpFile, 'w');
+ 103             stream_copy_to_stream($stream, $tmpFileStream);
+ 104             $callback($tmpFile, $ref);
+ 105         }
+ 106     }
+ 107 }
+
+R07
+Archivo app/Uploads/Image.php, lineas 24-51
+  24  */
+  25 class Image extends Model implements OwnableInterface
+  26 {
+  27     use HasFactory;
+  28     use HasCreatorAndUpdater;
+  29 
+  30     protected $fillable = ['name'];
+  31     protected $hidden = [];
+  32 
+  33     public function jointPermissions(): HasMany
+  34     {
+  35         return $this->hasMany(JointPermission::class, 'entity_id', 'uploaded_to')
+  36             ->where('joint_permissions.entity_type', '=', 'page');
+  37     }
+  38 
+  39     /**
+  40      * Scope the query to just the images visible to the user based upon the
+  41      * user visibility of the uploaded_to page.
+  42      * This limits results to just page-based images (gallery and drawio types).
+  43      */
+  44     public function scopeVisible(Builder $query): Builder
+  45     {
+  46         return app()->make(PermissionApplicator::class)
+  47             ->restrictPageRelationQuery($query, 'images', 'uploaded_to')
+  48             ->whereIn('type', ['gallery', 'drawio']);
+  49     }
+  50 
+  51     /**
+Archivo app/Uploads/ImageService.php, lineas 71-114
+  71     public function saveNew(string $imageName, string $imageData, string $type, int $uploadedTo = 0): Image
+  72     {
+  73         $disk = $this->storage->getDisk($type);
+  74         $secureUploads = setting('app-secure-images');
+  75         $fileName = $this->storage->cleanImageFileName($imageName);
+  76 
+  77         $imagePath = '/uploads/images/' . $type . '/' . date('Y-m') . '/';
+  78 
+  79         while ($disk->exists($imagePath . $fileName)) {
+  80             $fileName = Str::random(3) . $fileName;
+  81         }
+  82 
+  83         $fullPath = $imagePath . $fileName;
+  84         if ($secureUploads) {
+  85             $fullPath = $imagePath . Str::random(16) . '-' . $fileName;
+  86         }
+  87 
+  88         try {
+  89             $disk->put($fullPath, $imageData, true);
+  90         } catch (Exception $e) {
+  91             Log::error('Error when attempting image upload:' . $e->getMessage());
+  92 
+  93             throw new ImageUploadException(trans('errors.path_not_writable', ['filePath' => $fullPath]));
+  94         }
+  95 
+  96         $imageDetails = [
+  97             'name'        => $imageName,
+  98             'path'        => $fullPath,
+  99             'url'         => $this->storage->getPublicUrl($fullPath),
+ 100             'type'        => $type,
+ 101             'uploaded_to' => $uploadedTo,
+ 102         ];
+ 103 
+ 104         if (user()->id !== 0) {
+ 105             $userId = user()->id;
+ 106             $imageDetails['created_by'] = $userId;
+ 107             $imageDetails['updated_by'] = $userId;
+ 108         }
+ 109 
+ 110         $image = (new Image())->forceFill($imageDetails);
+ 111         $image->save();
+ 112 
+ 113         return $image;
+ 114     }
+Archivo app/Uploads/ImageService.php, lineas 156-206
+ 156     public function destroy(Image $image): void
+ 157     {
+ 158         $this->destroyFileAtPath($image->type, $image->path);
+ 159         $image->delete();
+ 160     }
+ 161 
+ 162     /**
+ 163      * Destroy the underlying image file at the given path.
+ 164      */
+ 165     public function destroyFileAtPath(string $type, string $path): void
+ 166     {
+ 167         $disk = $this->storage->getDisk($type);
+ 168         $disk->destroyAllMatchingNameFromPath($path);
+ 169     }
+ 170 
+ 171     /**
+ 172      * Delete gallery and drawings that are not within HTML content of pages or page revisions.
+ 173      * Checks based off of only the image name.
+ 174      * Could be much improved to be more specific but kept it generic for now to be safe.
+ 175      *
+ 176      * Returns the path of the images that would be/have been deleted.
+ 177      */
+ 178     public function deleteUnusedImages(bool $checkRevisions = true, bool $dryRun = true): array
+ 179     {
+ 180         $types = ['gallery', 'drawio'];
+ 181         $deletedPaths = [];
+ 182 
+ 183         Image::query()->whereIn('type', $types)
+ 184             ->chunk(1000, function ($images) use ($checkRevisions, &$deletedPaths, $dryRun) {
+ 185                 /** @var Image $image */
+ 186                 foreach ($images as $image) {
+ 187                     $searchQuery = '%' . basename($image->path) . '%';
+ 188                     $inPage = DB::table('entity_page_data')
+ 189                             ->where('html', 'like', $searchQuery)->count() > 0;
+ 190 
+ 191                     $inRevision = false;
+ 192                     if ($checkRevisions) {
+ 193                         $inRevision = DB::table('page_revisions')
+ 194                                 ->where('html', 'like', $searchQuery)->count() > 0;
+ 195                     }
+ 196 
+ 197                     if (!$inPage && !$inRevision) {
+ 198                         $deletedPaths[] = $image->path;
+ 199                         if (!$dryRun) {
+ 200                             $this->destroy($image);
+ 201                         }
+ 202                     }
+ 203                 }
+ 204             });
+ 205 
+ 206         return $deletedPaths;
+Archivo app/Uploads/ImageRepo.php, lineas 20-42
+  20     }
+  21 
+  22     /**
+  23      * Get an image with the given id.
+  24      */
+  25     public function getById($id): Image
+  26     {
+  27         return Image::query()->findOrFail($id);
+  28     }
+  29 
+  30     public function getVisiblePageImageById($id): Image
+  31     {
+  32         return Image::query()
+  33             ->scopes('visible')
+  34             ->findOrFail($id);
+  35     }
+  36 
+  37     /**
+  38      * Execute a paginated query, returning in a standard format.
+  39      * Also runs the query through the restriction system.
+  40      */
+  41     protected function returnPaginated(Builder $query, int $page = 1, int $pageSize = 24): array
+  42     {
+
+R08
+Archivo app/Uploads/Attachment.php, lineas 32-62
+  32 class Attachment extends Model implements OwnableInterface
+  33 {
+  34     use HasCreatorAndUpdater;
+  35     use HasFactory;
+  36 
+  37     protected $fillable = ['name', 'order'];
+  38     protected $hidden = ['path', 'page'];
+  39     protected $casts = [
+  40         'external' => 'bool',
+  41     ];
+  42 
+  43     /**
+  44      * Get the downloadable file name for this upload.
+  45      */
+  46     public function getFileName(): string
+  47     {
+  48         if (str_contains($this->name, '.')) {
+  49             return $this->name;
+  50         }
+  51 
+  52         return $this->name . '.' . $this->extension;
+  53     }
+  54 
+  55     /**
+  56      * Get the page this file was uploaded to.
+  57      */
+  58     public function page(): BelongsTo
+  59     {
+  60         return $this->belongsTo(Page::class, 'uploaded_to');
+  61     }
+  62 
+Archivo app/Uploads/Attachment.php, lineas 110-125
+ 110     }
+ 111 
+ 112     /**
+ 113      * Scope the query to those attachments that are visible based upon related page permissions.
+ 114      */
+ 115     public function scopeVisible(): Builder
+ 116     {
+ 117         $permissions = app()->make(PermissionApplicator::class);
+ 118 
+ 119         return $permissions->restrictPageRelationQuery(
+ 120             self::query(),
+ 121             'attachments',
+ 122             'uploaded_to'
+ 123         );
+ 124     }
+ 125 }
+Archivo app/Uploads/AttachmentService.php, lineas 39-58
+  39     public function saveNewUpload(UploadedFile $uploadedFile, int $pageId): Attachment
+  40     {
+  41         $attachmentName = $uploadedFile->getClientOriginalName();
+  42         $attachmentPath = $this->putFileInStorage($uploadedFile);
+  43         $largestExistingOrder = Attachment::query()->where('uploaded_to', '=', $pageId)->max('order');
+  44 
+  45         /** @var Attachment $attachment */
+  46         $attachment = Attachment::query()->forceCreate([
+  47             'name'        => $attachmentName,
+  48             'path'        => $attachmentPath,
+  49             'extension'   => $uploadedFile->getClientOriginalExtension(),
+  50             'uploaded_to' => $pageId,
+  51             'created_by'  => user()->id,
+  52             'updated_by'  => user()->id,
+  53             'order'       => $largestExistingOrder + 1,
+  54         ]);
+  55 
+  56         return $attachment;
+  57     }
+  58 
+Archivo app/Uploads/AttachmentService.php, lineas 105-159
+ 105     public function updateFileOrderWithinPage(array $attachmentOrder, string $pageId)
+ 106     {
+ 107         foreach ($attachmentOrder as $index => $attachmentId) {
+ 108             Attachment::query()->where('uploaded_to', '=', $pageId)
+ 109                 ->where('id', '=', $attachmentId)
+ 110                 ->update(['order' => $index]);
+ 111         }
+ 112     }
+ 113 
+ 114     /**
+ 115      * Update the details of a file.
+ 116      */
+ 117     public function updateFile(Attachment $attachment, array $requestData): Attachment
+ 118     {
+ 119         if (isset($requestData['name'])) {
+ 120             $attachment->name = $requestData['name'];
+ 121         }
+ 122 
+ 123         $link = trim($requestData['link'] ?? '');
+ 124         if (!empty($link)) {
+ 125             if (!$attachment->external) {
+ 126                 $this->deleteFileInStorage($attachment);
+ 127                 $attachment->external = true;
+ 128                 $attachment->extension = '';
+ 129             }
+ 130             $attachment->path = $link;
+ 131         }
+ 132 
+ 133         $attachment->save();
+ 134 
+ 135         return $attachment->refresh();
+ 136     }
+ 137 
+ 138     /**
+ 139      * Delete a File from the database and storage.
+ 140      *
+ 141      * @throws Exception
+ 142      */
+ 143     public function deleteFile(Attachment $attachment)
+ 144     {
+ 145         if (!$attachment->external) {
+ 146             $this->deleteFileInStorage($attachment);
+ 147         }
+ 148 
+ 149         $attachment->delete();
+ 150     }
+ 151 
+ 152     /**
+ 153      * Delete a file from the filesystem it sits on.
+ 154      * Cleans any empty leftover folders.
+ 155      */
+ 156     public function deleteFileInStorage(Attachment $attachment): void
+ 157     {
+ 158         $this->storage->delete($attachment->path);
+ 159     }
+Archivo app/Uploads/Controllers/AttachmentApiController.php, lineas 27-57
+  27      * The external property indicates whether the attachment is simply a link.
+  28      * A false value for the external property would indicate a file upload.
+  29      */
+  30     public function list()
+  31     {
+  32         return $this->apiListingResponse(Attachment::visible(), [
+  33             'id', 'name', 'extension', 'uploaded_to', 'external', 'order', 'created_at', 'updated_at', 'created_by', 'updated_by',
+  34         ]);
+  35     }
+  36 
+  37     /**
+  38      * Create a new attachment in the system.
+  39      * An uploaded_to value must be provided containing an ID of the page
+  40      * that this upload will be related to.
+  41      *
+  42      * If you're uploading a file, the POST data should be provided via
+  43      * a multipart/form-data type request instead of JSON.
+  44      *
+  45      * @throws ValidationException
+  46      * @throws FileUploadException
+  47      */
+  48     public function create(Request $request)
+  49     {
+  50         $this->checkPermission(Permission::AttachmentCreateAll);
+  51         $requestData = $this->validate($request, $this->rules()['create']);
+  52 
+  53         $pageId = $request->input('uploaded_to');
+  54         $page = $this->pageQueries->findVisibleByIdOrFail($pageId);
+  55         $this->checkOwnablePermission(Permission::PageUpdate, $page);
+  56 
+  57         if ($request->hasFile('file')) {
+
+R09
+Archivo app/Users/Models/User.php, lineas 55-64
+  55     /**
+  56      * The database table used by the model.
+  57      *
+  58      * @var string
+  59      */
+  60     protected $table = 'users';
+  61 
+  62     /**
+  63      * The attributes that are mass assignable.
+  64      *
+Archivo app/Users/Models/User.php, lineas 120-125
+ 120      */
+ 121     public function roles(): BelongsToMany
+ 122     {
+ 123         return $this->belongsToMany(Role::class);
+ 124     }
+ 125 
+Archivo app/Users/Models/User.php, lineas 164-181
+ 164      */
+ 165     protected function permissions(): Collection
+ 166     {
+ 167         if (isset($this->permissions)) {
+ 168             return $this->permissions;
+ 169         }
+ 170 
+ 171         $this->permissions = $this->newQuery()->getConnection()->table('role_user', 'ru')
+ 172             ->select('role_permissions.name as name')->distinct()
+ 173             ->leftJoin('permission_role', 'ru.role_id', '=', 'permission_role.role_id')
+ 174             ->leftJoin('role_permissions', 'permission_role.permission_id', '=', 'role_permissions.id')
+ 175             ->where('ru.user_id', '=', $this->id)
+ 176             ->pluck('name');
+ 177 
+ 178         return $this->permissions;
+ 179     }
+ 180 
+ 181     /**
+Archivo app/Users/Models/Role.php, lineas 39-102
+  39      * The roles that belong to the role.
+  40      */
+  41     public function users(): BelongsToMany
+  42     {
+  43         return $this->belongsToMany(User::class)->orderBy('name', 'asc');
+  44     }
+  45 
+  46     /**
+  47      * Get all related JointPermissions.
+  48      */
+  49     public function jointPermissions(): HasMany
+  50     {
+  51         return $this->hasMany(JointPermission::class);
+  52     }
+  53 
+  54     /**
+  55      * The RolePermissions that belong to the role.
+  56      * @return BelongsToMany<RolePermission, $this>
+  57      */
+  58     public function permissions(): BelongsToMany
+  59     {
+  60         return $this->belongsToMany(RolePermission::class, 'permission_role', 'role_id', 'permission_id')
+  61             ->select(['id', 'name']);
+  62     }
+  63 
+  64     /**
+  65      * Get the entity permissions assigned to this role.
+  66      */
+  67     public function entityPermissions(): HasMany
+  68     {
+  69         return $this->hasMany(EntityPermission::class);
+  70     }
+  71 
+  72     /**
+  73      * Check if this role has a permission.
+  74      */
+  75     public function hasPermission(string $permissionName): bool
+  76     {
+  77         $permissions = $this->getRelationValue('permissions');
+  78         foreach ($permissions as $permission) {
+  79             if ($permission->getRawAttribute('name') === $permissionName) {
+  80                 return true;
+  81             }
+  82         }
+  83 
+  84         return false;
+  85     }
+  86 
+  87     /**
+  88      * Add a permission to this role.
+  89      */
+  90     public function attachPermission(RolePermission $permission)
+  91     {
+  92         $this->permissions()->attach($permission->id);
+  93     }
+  94 
+  95     /**
+  96      * Detach a single permission from this role.
+  97      */
+  98     public function detachPermission(RolePermission $permission)
+  99     {
+ 100         $this->permissions()->detach([$permission->id]);
+ 101     }
+ 102 
+Archivo app/Users/UserRepo.php, lineas 78-102
+  78     public function createWithoutActivity(array $data, bool $emailConfirmed = false): User
+  79     {
+  80         $user = new User();
+  81         $user->name = $data['name'];
+  82         $user->email = $data['email'];
+  83         $user->password = Hash::make(empty($data['password']) ? Str::random(32) : $data['password']);
+  84         $user->email_confirmed = $emailConfirmed;
+  85         $user->external_auth_id = $data['external_auth_id'] ?? '';
+  86 
+  87         $this->slugGenerator->regenerateForUser($user);
+  88         $user->save();
+  89 
+  90         if (!empty($data['language'])) {
+  91             setting()->putUser($user, 'language', $data['language']);
+  92         }
+  93 
+  94         if (isset($data['roles'])) {
+  95             $this->setUserRoles($user, $data['roles']);
+  96         }
+  97 
+  98         $this->downloadAndAssignUserAvatar($user);
+  99 
+ 100         return $user;
+ 101     }
+ 102 
+Archivo app/Users/UserRepo.php, lineas 205-265
+ 205 
+ 206     protected function removeUserDependantRelations(User $user): void
+ 207     {
+ 208         $user->apiTokens()->delete();
+ 209         $user->socialAccounts()->delete();
+ 210         $user->favourites()->delete();
+ 211         $user->mfaValues()->delete();
+ 212         $user->watches()->delete();
+ 213 
+ 214         $tables = ['email_confirmations', 'user_invites', 'views'];
+ 215         foreach ($tables as $table) {
+ 216             DB::table($table)->where('user_id', '=', $user->id)->delete();
+ 217         }
+ 218     }
+ 219     protected function nullifyUserNonDependantRelations(User $user): void
+ 220     {
+ 221         $toNullify = [
+ 222             'attachments' => ['created_by', 'updated_by'],
+ 223             'comments' => ['created_by', 'updated_by'],
+ 224             'deletions' => ['deleted_by'],
+ 225             'entities' => ['created_by', 'updated_by'],
+ 226             'images' => ['created_by', 'updated_by'],
+ 227             'imports' => ['created_by'],
+ 228             'joint_permissions' => ['owner_id'],
+ 229             'page_revisions' => ['created_by'],
+ 230             'sessions' => ['user_id'],
+ 231         ];
+ 232 
+ 233         foreach ($toNullify as $table => $columns) {
+ 234             foreach ($columns as $column) {
+ 235                 DB::table($table)
+ 236                     ->where($column, '=', $user->id)
+ 237                     ->update([$column => null]);
+ 238             }
+ 239         }
+ 240     }
+ 241 
+ 242     /**
+ 243      * @throws NotifyException
+ 244      */
+ 245     protected function ensureDeletable(User $user): void
+ 246     {
+ 247         if ($this->isOnlyAdmin($user)) {
+ 248             throw new NotifyException(trans('errors.users_cannot_delete_only_admin'), $user->getEditUrl());
+ 249         }
+ 250 
+ 251         if ($user->system_name === 'public') {
+ 252             throw new NotifyException(trans('errors.users_cannot_delete_guest'), $user->getEditUrl());
+ 253         }
+ 254     }
+ 255 
+ 256     /**
+ 257      * Migrate ownership of items in the system from one user to another.
+ 258      */
+ 259     protected function migrateOwnership(User $fromUser, User|null $toUser): void
+ 260     {
+ 261         $newOwnerValue = $toUser ? $toUser->id : null;
+ 262         DB::table('entities')
+ 263             ->where('owned_by', '=', $fromUser->id)
+ 264             ->update(['owned_by' => $newOwnerValue]);
+ 265     }
+Archivo app/Users/UserRepo.php, lineas 300-312
+ 300      * @throws UserUpdateException
+ 301      */
+ 302     protected function setUserRoles(User $user, array $roles): void
+ 303     {
+ 304         $roles = array_filter(array_values($roles));
+ 305 
+ 306         if ($this->demotingLastAdmin($user, $roles)) {
+ 307             throw new UserUpdateException(trans('errors.role_cannot_remove_only_admin'), $user->getEditUrl());
+ 308         }
+ 309 
+ 310         $user->roles()->sync($roles);
+ 311     }
+ 312 
+Archivo app/Permissions/PermissionsRepo.php, lineas 26-117
+  26     public function getAllRoles(): Collection
+  27     {
+  28         return Role::query()->get();
+  29     }
+  30 
+  31     /**
+  32      * Get all the roles except for the provided one.
+  33      */
+  34     public function getAllRolesExcept(Role $role): Collection
+  35     {
+  36         return Role::query()->where('id', '!=', $role->id)->get();
+  37     }
+  38 
+  39     /**
+  40      * Get a role via its ID.
+  41      */
+  42     public function getRoleById(int $id): Role
+  43     {
+  44         return Role::query()->findOrFail($id);
+  45     }
+  46 
+  47     /**
+  48      * Save a new role into the system.
+  49      */
+  50     public function saveNewRole(array $roleData): Role
+  51     {
+  52         return (new DatabaseTransaction(function () use ($roleData) {
+  53             $role = new Role($roleData);
+  54             $role->mfa_enforced = boolval($roleData['mfa_enforced'] ?? false);
+  55             $role->save();
+  56 
+  57             $permissions = $roleData['permissions'] ?? [];
+  58             $this->assignRolePermissions($role, $permissions);
+  59             $this->permissionBuilder->rebuildForRole($role);
+  60 
+  61             Activity::add(ActivityType::ROLE_CREATE, $role);
+  62 
+  63             return $role;
+  64         }))->run();
+  65     }
+  66 
+  67     /**
+  68      * Updates an existing role.
+  69      * Ensures the Admin system role always has core permissions.
+  70      */
+  71     public function updateRole($roleId, array $roleData): Role
+  72     {
+  73         $role = $this->getRoleById($roleId);
+  74 
+  75         return (new DatabaseTransaction(function () use ($role, $roleData) {
+  76             if (isset($roleData['permissions'])) {
+  77                 $this->assignRolePermissions($role, $roleData['permissions']);
+  78             }
+  79 
+  80             $role->fill($roleData);
+  81             $role->save();
+  82             $this->permissionBuilder->rebuildForRole($role);
+  83 
+  84             Activity::add(ActivityType::ROLE_UPDATE, $role);
+  85 
+  86             return $role;
+  87         }))->run();
+  88     }
+  89 
+  90     /**
+  91      * Assign a list of permission names to the given role.
+  92      */
+  93     protected function assignRolePermissions(Role $role, array $permissionNameArray = []): void
+  94     {
+  95         $permissions = [];
+  96         $permissionNameArray = array_values($permissionNameArray);
+  97 
+  98         // Ensure the admin system role retains vital system permissions
+  99         if ($role->system_name === 'admin') {
+ 100             $permissionNameArray = array_unique(array_merge($permissionNameArray, [
+ 101                 'users-manage',
+ 102                 'user-roles-manage',
+ 103                 'restrictions-manage-all',
+ 104                 'restrictions-manage-own',
+ 105                 'settings-manage',
+ 106             ]));
+ 107         }
+ 108 
+ 109         if (!empty($permissionNameArray)) {
+ 110             $permissions = RolePermission::query()
+ 111                 ->whereIn('name', $permissionNameArray)
+ 112                 ->pluck('id')
+ 113                 ->toArray();
+ 114         }
+ 115 
+ 116         $role->permissions()->sync($permissions);
+ 117     }
+
+R10
+Archivo app/Entities/Tools/PermissionsUpdater.php, lineas 22-101
+  22     {
+  23         $permissions = $request->input('permissions', null);
+  24         $ownerId = $request->input('owned_by', null);
+  25 
+  26         $entity->permissions()->delete();
+  27 
+  28         if (!is_null($permissions)) {
+  29             $entityPermissionData = $this->formatPermissionsFromRequestToEntityPermissions($permissions);
+  30             $entity->permissions()->createMany($entityPermissionData);
+  31         }
+  32 
+  33         if (!is_null($ownerId)) {
+  34             $this->updateOwnerFromId($entity, intval($ownerId));
+  35         }
+  36 
+  37         $entity->save();
+  38         $entity->rebuildPermissions();
+  39 
+  40         Activity::add(ActivityType::PERMISSIONS_UPDATE, $entity);
+  41     }
+  42 
+  43     /**
+  44      * Update permissions from API request data.
+  45      */
+  46     public function updateFromApiRequestData(Entity $entity, array $data): void
+  47     {
+  48         if (isset($data['role_permissions'])) {
+  49             $entity->permissions()->where('role_id', '!=', 0)->delete();
+  50             $rolePermissionData = $this->formatPermissionsFromApiRequestToEntityPermissions($data['role_permissions'], false);
+  51             $entity->permissions()->createMany($rolePermissionData);
+  52         }
+  53 
+  54         if (array_key_exists('fallback_permissions', $data)) {
+  55             $entity->permissions()->where('role_id', '=', 0)->delete();
+  56         }
+  57 
+  58         if (isset($data['fallback_permissions']['inheriting']) && $data['fallback_permissions']['inheriting'] !== true) {
+  59             $fallbackData = $data['fallback_permissions'];
+  60             $fallbackData['role_id'] = 0;
+  61             $rolePermissionData = $this->formatPermissionsFromApiRequestToEntityPermissions([$fallbackData], true);
+  62             $entity->permissions()->createMany($rolePermissionData);
+  63         }
+  64 
+  65         if (isset($data['owner_id'])) {
+  66             $this->updateOwnerFromId($entity, intval($data['owner_id']));
+  67         }
+  68 
+  69         $entity->save();
+  70         $entity->rebuildPermissions();
+  71 
+  72         Activity::add(ActivityType::PERMISSIONS_UPDATE, $entity);
+  73     }
+  74 
+  75     /**
+  76      * Update the owner of the given entity.
+  77      * Checks the user exists in the system first.
+  78      * Does not save the model, just updates it.
+  79      */
+  80     protected function updateOwnerFromId(Entity $entity, int $newOwnerId): void
+  81     {
+  82         $newOwner = User::query()->find($newOwnerId);
+  83         if (!is_null($newOwner)) {
+  84             $entity->owned_by = $newOwner->id;
+  85         }
+  86     }
+  87 
+  88     /**
+  89      * Format permissions provided from a permission form to be EntityPermission data.
+  90      */
+  91     protected function formatPermissionsFromRequestToEntityPermissions(array $permissions): array
+  92     {
+  93         $formatted = [];
+  94 
+  95         foreach ($permissions as $roleId => $info) {
+  96             $entityPermissionData = ['role_id' => $roleId];
+  97             foreach (Permission::genericForEntity() as $permission) {
+  98                 $permName = $permission->value;
+  99                 $entityPermissionData[$permName] = (($info[$permName] ?? false) === "true");
+ 100             }
+ 101             $formatted[] = $entityPermissionData;
+Archivo app/Permissions/PermissionApplicator.php, lineas 102-123
+ 102             $parentQuery->whereHas('jointPermissions', function (Builder $permissionQuery) {
+ 103                 $permissionQuery->select(['entity_id', 'entity_type'])
+ 104                     ->selectRaw('max(owner_id) as owner_id')
+ 105                     ->selectRaw('max(status) as status')
+ 106                     ->whereIn('role_id', $this->getCurrentUserRoleIds())
+ 107                     ->groupBy(['entity_type', 'entity_id'])
+ 108                     ->havingRaw('(status IN (1, 3) or (owner_id = ? and status != 2))', [$this->currentUser()->id]);
+ 109             });
+ 110         });
+ 111     }
+ 112 
+ 113     /**
+ 114      * Extend the given page query to ensure draft items are not visible
+ 115      * unless created by the given user.
+ 116      */
+ 117     public function restrictDraftsOnPageQuery(Builder $query): Builder
+ 118     {
+ 119         return $query->where(function (Builder $query) {
+ 120             $query->where('draft', '=', false)
+ 121                 ->orWhere(function (Builder $query) {
+ 122                     $query->where('draft', '=', true)
+ 123                         ->where('owned_by', '=', $this->currentUser()->id);
+Archivo app/Permissions/PermissionApplicator.php, lineas 132-155
+ 132      */
+ 133     public function restrictEntityRelationQuery(Builder $query, string $tableName, string $entityIdColumn, string $entityTypeColumn): Builder
+ 134     {
+ 135         $tableDetails = ['tableName' => $tableName, 'entityIdColumn' => $entityIdColumn, 'entityTypeColumn' => $entityTypeColumn];
+ 136         $pageMorphClass = (new Page())->getMorphClass();
+ 137 
+ 138         return $this->restrictEntityQuery($query)
+ 139             ->where(function ($query) use ($tableDetails, $pageMorphClass) {
+ 140                 /** @var Builder $query */
+ 141                 $query->where($tableDetails['entityTypeColumn'], '!=', $pageMorphClass)
+ 142                 ->orWhereExists(function (QueryBuilder $query) use ($tableDetails, $pageMorphClass) {
+ 143                     $query->select('page_id')->from('entity_page_data')
+ 144                         ->whereColumn('entity_page_data.page_id', '=', $tableDetails['tableName'] . '.' . $tableDetails['entityIdColumn'])
+ 145                         ->where($tableDetails['tableName'] . '.' . $tableDetails['entityTypeColumn'], '=', $pageMorphClass)
+ 146                         ->where('entity_page_data.draft', '=', false);
+ 147                 });
+ 148             });
+ 149     }
+ 150 
+ 151     /**
+ 152      * Filter out items that have related entity relations where
+ 153      * the entity is marked as deleted.
+ 154      */
+ 155     public function filterDeletedFromEntityRelationQuery(Builder $query, string $tableName, string $entityIdColumn, string $entityTypeColumn): Builder
+Archivo app/Permissions/PermissionApplicator.php, lineas 192-210
+ 192     public function restrictPageRelationQuery(Builder $query, string $tableName, string $pageIdColumn): Builder
+ 193     {
+ 194         $fullPageIdColumn = $tableName . '.' . $pageIdColumn;
+ 195         return $this->restrictEntityQuery($query)
+ 196             ->whereExists(function (QueryBuilder $query) use ($fullPageIdColumn) {
+ 197                 $query->select('id')->from('entities')
+ 198                     ->leftJoin('entity_page_data', 'entities.id', '=', 'entity_page_data.page_id')
+ 199                     ->whereColumn('entities.id', '=', $fullPageIdColumn)
+ 200                     ->where('entities.type', '=', 'page')
+ 201                     ->where(function (QueryBuilder $query) {
+ 202                         $query->where('entity_page_data.draft', '=', false)
+ 203                             ->orWhere(function (QueryBuilder $query) {
+ 204                                 $query->where('entity_page_data.draft', '=', true)
+ 205                                     ->where('entities.created_by', '=', $this->currentUser()->id);
+ 206                             });
+ 207                     });
+ 208             });
+ 209     }
+ 210 
+Archivo app/Permissions/JointPermissionBuilder.php, lineas 32-49
+  32     public function rebuildForAll(): void
+  33     {
+  34         JointPermission::query()->truncate();
+  35 
+  36         // Get all roles (Should be the most limited dimension)
+  37         $roles = Role::query()->with('permissions')->get()->all();
+  38 
+  39         // Chunk through all books
+  40         $this->bookFetchQuery()->chunk(5, function (EloquentCollection $books) use ($roles) {
+  41             $this->buildJointPermissionsForBooks($books, $roles);
+  42         });
+  43 
+  44         // Chunk through all bookshelves
+  45         $this->queries->shelves->start()->withTrashed()->select(['id', 'owned_by'])
+  46             ->chunk(50, function (EloquentCollection $shelves) use ($roles) {
+  47                 $this->createManyJointPermissions($shelves->all(), $roles);
+  48             });
+  49     }
+Archivo app/Permissions/JointPermissionBuilder.php, lineas 161-174
+ 161     protected function deleteManyJointPermissionsForEntities(array $entities): void
+ 162     {
+ 163         $simpleEntities = $this->entitiesToSimpleEntities($entities);
+ 164         $idsByType = $this->entitiesToTypeIdMap($simpleEntities);
+ 165 
+ 166         foreach ($idsByType as $type => $ids) {
+ 167             foreach (array_chunk($ids, 1000) as $idChunk) {
+ 168                 DB::table('joint_permissions')
+ 169                     ->where('entity_type', '=', $type)
+ 170                     ->whereIn('entity_id', $idChunk)
+ 171                     ->delete();
+ 172             }
+ 173         }
+ 174     }
+Archivo app/Permissions/JointPermissionBuilder.php, lineas 199-233
+ 199     protected function createManyJointPermissions(array $originalEntities, array $roles): void
+ 200     {
+ 201         $entities = $this->entitiesToSimpleEntities($originalEntities);
+ 202         $jointPermissions = [];
+ 203 
+ 204         // Fetch related entity permissions
+ 205         $permissions = new MassEntityPermissionEvaluator($entities, 'view');
+ 206 
+ 207         // Create a mapping of role permissions
+ 208         $rolePermissionMap = [];
+ 209         foreach ($roles as $role) {
+ 210             foreach ($role->permissions as $permission) {
+ 211                 $rolePermissionMap[$role->getRawAttribute('id') . ':' . $permission->getRawAttribute('name')] = true;
+ 212             }
+ 213         }
+ 214 
+ 215         // Create Joint Permission Data
+ 216         foreach ($entities as $entity) {
+ 217             foreach ($roles as $role) {
+ 218                 $jp = $this->createJointPermissionData(
+ 219                     $entity,
+ 220                     $role->getRawAttribute('id'),
+ 221                     $permissions,
+ 222                     $rolePermissionMap,
+ 223                     $role->system_name === 'admin'
+ 224                 );
+ 225                 $jointPermissions[] = $jp;
+ 226             }
+ 227         }
+ 228 
+ 229         foreach (array_chunk($jointPermissions, 1000) as $jointPermissionChunk) {
+ 230             DB::table('joint_permissions')->insert($jointPermissionChunk);
+ 231         }
+ 232     }
+ 233 
+Archivo app/Permissions/EntityPermissionEvaluator.php, lineas 116-139
+ 116     /**
+ 117      * @param string[] $ids
+ 118      * @param int[] $filterRoleIds
+ 119      * @return EntityPermission[]
+ 120      */
+ 121     protected function getPermissionsForEntityIdsOfType(string $type, array $ids, array $filterRoleIds): array
+ 122     {
+ 123         $query = EntityPermission::query()
+ 124             ->where('entity_type', '=', $type)
+ 125             ->whereIn('entity_id', $ids);
+ 126 
+ 127         if (!empty($filterRoleIds)) {
+ 128             $query->where(function (Builder $query) use ($filterRoleIds) {
+ 129                 $query->whereIn('role_id', [...$filterRoleIds, 0]);
+ 130             });
+ 131         }
+ 132 
+ 133         return $query->get(['entity_id', 'entity_type', 'role_id', $this->action])->all();
+ 134     }
+ 135 
+ 136     /**
+ 137      * @return string[]
+ 138      */
+ 139     protected function gatherEntityChainTypeIds(SimpleEntityData $entity): array
+
+R11
+Archivo app/Entities/Repos/BookshelfRepo.php, lineas 61-91
+  61     protected function updateBooks(Bookshelf $shelf, array $bookIds): void
+  62     {
+  63         $numericIDs = collect($bookIds)->map(function ($id) {
+  64             return intval($id);
+  65         });
+  66 
+  67         $existingBookIds = $shelf->books()->pluck('id')->toArray();
+  68         $visibleExistingBookIds = $this->bookQueries->visibleForList()
+  69             ->whereIn('id', $existingBookIds)
+  70             ->pluck('id')
+  71             ->toArray();
+  72         $nonVisibleExistingBookIds = array_values(array_diff($existingBookIds, $visibleExistingBookIds));
+  73 
+  74         $newIdsToAssign = $this->bookQueries->visibleForList()
+  75             ->whereIn('id', $bookIds)
+  76             ->pluck('id')
+  77             ->toArray();
+  78 
+  79         $maxNewIndex = max($numericIDs->keys()->toArray() ?: [0]);
+  80 
+  81         $syncData = [];
+  82         foreach ($newIdsToAssign as $id) {
+  83             $syncData[$id] = ['order' => $numericIDs->search($id)];
+  84         }
+  85 
+  86         foreach ($nonVisibleExistingBookIds as $index => $id) {
+  87             $syncData[$id] = ['order' => $maxNewIndex + ($index + 1)];
+  88         }
+  89 
+  90         $shelf->books()->sync($syncData);
+  91     }
+Archivo app/Activity/TagRepo.php, lineas 137-156
+ 137             return boolval(trim($tag['name']));
+ 138         })->map(function ($tag) {
+ 139             return $this->newInstanceFromInput($tag);
+ 140         })->all();
+ 141 
+ 142         return $entity->tags()->saveMany($newTags);
+ 143     }
+ 144 
+ 145     /**
+ 146      * Create a new Tag instance from user input.
+ 147      * Input must be an array with a 'name' and an optional 'value' key.
+ 148      */
+ 149     protected function newInstanceFromInput(array $input): Tag
+ 150     {
+ 151         return new Tag([
+ 152             'name'  => trim($input['name']),
+ 153             'value' => trim($input['value'] ?? ''),
+ 154         ]);
+ 155     }
+ 156 }
+
+R04 - Generacion de terminos desde contenido
+Archivo app/Search/SearchIndex.php, lineas 248-273
+ 248     protected function entityToTermDataArray(Entity $entity): array
+ 249     {
+ 250         $nameTermsMap = $this->generateTermScoreMapFromText($entity->name, 40 * $entity->searchFactor);
+ 251         $tagTermsMap = $this->generateTermScoreMapFromTags($entity->tags->all());
+ 252 
+ 253         if ($entity instanceof Page) {
+ 254             $bodyTermsMap = $this->generateTermScoreMapFromHtml($entity->html);
+ 255         } else {
+ 256             $bodyTermsMap = $this->generateTermScoreMapFromText($entity->getAttribute('description') ?? '', $entity->searchFactor);
+ 257         }
+ 258 
+ 259         $mergedScoreMap = $this->mergeTermScoreMaps($nameTermsMap, $bodyTermsMap, $tagTermsMap);
+ 260 
+ 261         $dataArray = [];
+ 262         $entityId = $entity->id;
+ 263         $entityType = $entity->getMorphClass();
+ 264         foreach ($mergedScoreMap as $term => $score) {
+ 265             $dataArray[] = [
+ 266                 'term'        => $term,
+ 267                 'score'       => $score,
+ 268                 'entity_type' => $entityType,
+ 269                 'entity_id'   => $entityId,
+ 270             ];
+ 271         }
+ 272 
+ 273         return $dataArray;

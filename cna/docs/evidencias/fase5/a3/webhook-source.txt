@@ -1,0 +1,208 @@
+Archivo app/Activity/Tools/WebhookFormatter.php
+SHA256 41de736ee4c32cb9bfaca67398b9cdb29d750787c750d2e1769e7b160a052285
+   1 <?php
+   2 
+   3 namespace BookStack\Activity\Tools;
+   4 
+   5 use BookStack\Activity\ActivityType;
+   6 use BookStack\Activity\Models\Loggable;
+   7 use BookStack\Activity\Models\Webhook;
+   8 use BookStack\App\Model;
+   9 use BookStack\Entities\Models\Entity;
+  10 use BookStack\Entities\Models\Page;
+  11 use BookStack\Users\Models\User;
+  12 use Illuminate\Support\Carbon;
+  13 
+  14 class WebhookFormatter
+  15 {
+  16     protected Webhook $webhook;
+  17     protected string $event;
+  18     protected User $initiator;
+  19     protected int $initiatedTime;
+  20     protected string|Loggable $detail;
+  21 
+  22     /**
+  23      * @var array{condition: callable(string, Model):bool, format: callable(Model):void}[]
+  24      */
+  25     protected $modelFormatters = [];
+  26 
+  27     public function __construct(string $event, Webhook $webhook, string|Loggable $detail, User $initiator, int $initiatedTime)
+  28     {
+  29         $this->webhook = $webhook;
+  30         $this->event = $event;
+  31         $this->initiator = $initiator;
+  32         $this->initiatedTime = $initiatedTime;
+  33         $this->detail = is_object($detail) ? clone $detail : $detail;
+  34     }
+  35 
+  36     public function format(): array
+  37     {
+  38         $data = [
+  39             'event'                    => $this->event,
+  40             'text'                     => $this->formatText(),
+  41             'triggered_at'             => Carbon::createFromTimestampUTC($this->initiatedTime)->toISOString(),
+  42             'triggered_by'             => $this->initiator->attributesToArray(),
+  43             'triggered_by_profile_url' => $this->initiator->getProfileUrl(),
+  44             'webhook_id'               => $this->webhook->id,
+  45             'webhook_name'             => $this->webhook->name,
+  46         ];
+  47 
+  48         if (method_exists($this->detail, 'getUrl')) {
+  49             $data['url'] = $this->detail->getUrl();
+  50         }
+  51 
+  52         if ($this->detail instanceof Model) {
+  53             $data['related_item'] = $this->formatModel($this->detail);
+  54         }
+  55 
+  56         return $data;
+  57     }
+  58 
+  59     /**
+  60      * @param callable(string, Model):bool $condition
+  61      * @param callable(Model):void         $format
+  62      */
+  63     public function addModelFormatter(callable $condition, callable $format): void
+  64     {
+  65         $this->modelFormatters[] = [
+  66             'condition' => $condition,
+  67             'format'    => $format,
+  68         ];
+  69     }
+  70 
+  71     public function addDefaultModelFormatters(): void
+  72     {
+  73         // Load entity owner, creator, updater details
+  74         $this->addModelFormatter(
+  75             fn ($event, $model) => ($model instanceof Entity),
+  76             fn ($model) => $model->load(['ownedBy', 'createdBy', 'updatedBy'])
+  77         );
+  78 
+  79         // Load revision detail for page update and create events
+  80         $this->addModelFormatter(
+  81             fn ($event, $model) => ($model instanceof Page && ($event === ActivityType::PAGE_CREATE || $event === ActivityType::PAGE_UPDATE)),
+  82             fn ($model) => $model->load('currentRevision')
+  83         );
+  84     }
+  85 
+  86     protected function formatModel(Model $model): array
+  87     {
+  88         $model->unsetRelations();
+  89 
+  90         foreach ($this->modelFormatters as $formatter) {
+  91             if ($formatter['condition']($this->event, $model)) {
+  92                 $formatter['format']($model);
+  93             }
+  94         }
+  95 
+  96         return $model->toArray();
+  97     }
+  98 
+  99     protected function formatText(): string
+ 100     {
+ 101         $textParts = [
+ 102             $this->initiator->name,
+ 103             trans('activities.' . $this->event),
+ 104         ];
+ 105 
+ 106         if ($this->detail instanceof Entity) {
+ 107             $textParts[] = '"' . $this->detail->name . '"';
+ 108         }
+ 109 
+ 110         return implode(' ', $textParts);
+ 111     }
+ 112 
+ 113     public static function getDefault(string $event, Webhook $webhook, $detail, User $initiator, int $initiatedTime): self
+ 114     {
+ 115         $instance = new self($event, $webhook, $detail, $initiator, $initiatedTime);
+ 116         $instance->addDefaultModelFormatters();
+ 117 
+ 118         return $instance;
+ 119     }
+ 120 }
+Archivo app/Activity/DispatchWebhookJob.php
+SHA256 2df109df4dd68c04a0b7931d00dad5d8225f07a4c0bc25a87b1a7d0738a03955
+   1 <?php
+   2 
+   3 namespace BookStack\Activity;
+   4 
+   5 use BookStack\Activity\Models\Loggable;
+   6 use BookStack\Activity\Models\Webhook;
+   7 use BookStack\Activity\Tools\WebhookFormatter;
+   8 use BookStack\Facades\Theme;
+   9 use BookStack\Http\HttpRequestService;
+  10 use BookStack\Theming\ThemeEvents;
+  11 use BookStack\Users\Models\User;
+  12 use BookStack\Util\SsrUrlValidator;
+  13 use Illuminate\Bus\Queueable;
+  14 use Illuminate\Contracts\Queue\ShouldQueue;
+  15 use Illuminate\Foundation\Bus\Dispatchable;
+  16 use Illuminate\Queue\InteractsWithQueue;
+  17 use Illuminate\Queue\SerializesModels;
+  18 use Illuminate\Support\Facades\Log;
+  19 
+  20 class DispatchWebhookJob implements ShouldQueue
+  21 {
+  22     use Dispatchable;
+  23     use InteractsWithQueue;
+  24     use Queueable;
+  25     use SerializesModels;
+  26 
+  27     protected Webhook $webhook;
+  28     protected User $initiator;
+  29     protected int $initiatedTime;
+  30     protected array $webhookData;
+  31 
+  32     /**
+  33      * Create a new job instance.
+  34      *
+  35      * @return void
+  36      */
+  37     public function __construct(Webhook $webhook, string $event, Loggable|string $detail)
+  38     {
+  39         $this->webhook = $webhook;
+  40         $this->initiator = user();
+  41         $this->initiatedTime = time();
+  42 
+  43         $themeResponse = Theme::dispatch(ThemeEvents::WEBHOOK_CALL_BEFORE, $event, $this->webhook, $detail, $this->initiator, $this->initiatedTime);
+  44         $this->webhookData =  $themeResponse ?? WebhookFormatter::getDefault($event, $this->webhook, $detail, $this->initiator, $this->initiatedTime)->format();
+  45     }
+  46 
+  47     /**
+  48      * Execute the job.
+  49      *
+  50      * @return void
+  51      */
+  52     public function handle(HttpRequestService $http)
+  53     {
+  54         $lastError = null;
+  55 
+  56         try {
+  57             (new SsrUrlValidator())->ensureAllowed($this->webhook->endpoint);
+  58 
+  59             $client = $http->buildClient($this->webhook->timeout, [
+  60                 'connect_timeout' => 10,
+  61                 'allow_redirects' => ['strict' => true],
+  62             ]);
+  63 
+  64             $response = $client->sendRequest($http->jsonRequest('POST', $this->webhook->endpoint, $this->webhookData));
+  65             $statusCode = $response->getStatusCode();
+  66 
+  67             if ($statusCode >= 400) {
+  68                 $lastError = "Response status from endpoint was {$statusCode}";
+  69                 Log::error("Webhook call to endpoint {$this->webhook->endpoint} failed with status {$statusCode}");
+  70             }
+  71         } catch (\Exception $error) {
+  72             $lastError = $error->getMessage();
+  73             Log::error("Webhook call to endpoint {$this->webhook->endpoint} failed with error \"{$lastError}\"");
+  74         }
+  75 
+  76         $this->webhook->last_called_at = now();
+  77         if ($lastError) {
+  78             $this->webhook->last_errored_at = now();
+  79             $this->webhook->last_error = $lastError;
+  80         }
+  81 
+  82         $this->webhook->save();
+  83     }
+  84 }

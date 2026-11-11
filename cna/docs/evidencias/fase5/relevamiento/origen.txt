@@ -1,0 +1,4 @@
+2026-11-11T13:33:13+00:00
+Usuario: arqweb
+Nodo: arqwebserver
+Aplicacion: /var/www/bookstack

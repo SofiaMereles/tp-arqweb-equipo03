@@ -1,0 +1,406 @@
+% !TeX root = main.tex
+\clearpage
+\begingroup
+\setlength{\emergencystretch}{3em}
+\subsection{A2: Registro de Decisiones de Arquitectura}
+\label{sec:fase5-a2}
+Se documentan las decisiones ADR-006 a ADR-010 aceptadas por el equipo para el diseño. Cada registro conserva contexto, decisión, alternativas descartadas y consecuencias. Las verificaciones operativas se ejecutarán durante la Fase 6. El respaldo de recursos del anfitrión se conserva en \path{cna/docs/adr/recursos-a2.txt}.
+
+\subsubsection{ADR-006 — Estrategia de migración e integración con el monolito}
+\label{adr:006}
+
+\begin{adrbox}{Estatus de ADR-006}
+Aceptado para el diseño por el equipo.
+\end{adrbox}
+
+\par\medskip\noindent\textbf{Contexto}\par\nobreak\smallskip
+
+BookStack debe continuar atendiendo la gestión documental durante la extracción de búsqueda, auditoría, exportación y medios. La consigna establece integración por API REST y Webhooks y exige conservar el código fuente del monolito.
+
+En A1 se verificó que el guardado de entidades persiste atributos comunes y específicos, invoca la indexación y registra actividad. La visibilidad de contenido y archivos depende de usuarios y permisos efectivos. Estos acoplamientos hacen necesario definir una frontera de integración que mantenga la autorización y permita incorporar los servicios gradualmente.
+
+\par\medskip\noindent\textbf{Decisión}\par\nobreak\smallskip
+
+Aplicar Strangler Fig incorporando los servicios alrededor de BookStack. El Nginx de VM-1 expondrá las rutas \path{/v2/} de los servicios mediante el dominio \path{api.bookstack.local}. BookStack mantendrá la gestión documental y su dominio actual.
+
+Los servicios que necesitan contenido lo obtendrán mediante la API REST, con una cuenta de servicio y los permisos necesarios para cada operación. Los cambios de páginas se recibirán por Webhooks en \path{event-bridge}, que adaptará los mensajes a los contratos de eventos y los publicará para sus consumidores. Cada adaptador HTTP o de eventos funcionará como capa anticorrupción entre los modelos del monolito y los contratos de los servicios.
+
+La habilitación de las nuevas funcionalidades será gradual. El gateway permitirá desactivar una ruta del servicio y devolver el acceso a la funcionalidad equivalente del monolito conforme al procedimiento de reversión que se documentará en A5.
+
+\par\medskip\noindent\textbf{Alternativas descartadas}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item \textbf{Reemplazar BookStack en una sola entrega.} Concentra el riesgo de migración de contenido, usuarios y permisos en una única intervención y dificulta conservar la operación durante la transición.
+\item \textbf{Integrar los servicios mediante consultas directas a MariaDB.} Acopla los servicios a las tablas compartidas observadas en A1 y puede omitir los filtros de autorización de BookStack. Además, incumple la restricción docente de acceso a MariaDB desde los microservicios.
+\item \textbf{Modificar BookStack para invocar los nuevos servicios.} Obliga a mantener cambios propios sobre el código del monolito y contradice la vía de integración exigida por la consigna.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Consecuencias}\par\nobreak\smallskip
+
+\par\medskip\noindent\textbf{Favorables}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item Permite incorporar y verificar una funcionalidad por vez manteniendo la gestión documental disponible.
+\item Usa las interfaces del monolito como frontera de integración y conserva sus controles de acceso en las lecturas de API.
+\item Facilita desactivar una ruta externa ante fallos del servicio extraído.
+\item Los contratos propios permiten evolucionar los servicios con persistencia independiente.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Costos y limitaciones}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item La API de BookStack pasa a ser una dependencia de los servicios de búsqueda y exportación, con latencia adicional y necesidad de timeouts y tratamiento de errores.
+\item El índice y la auditoría externa se actualizarán de forma asíncrona, por lo que habrá un intervalo de consistencia eventual.
+\item La integración necesita operación adicional de gateway, adaptadores, broker y credenciales, además de observabilidad entre componentes.
+\item La lectura con un token de servicio exige definir el alcance de visibilidad de los resultados del servicio, especialmente en búsqueda y exportación.
+\item La recolección inicial y la recuperación ante eventos fallidos requieren procedimientos explícitos. Su entrega, deduplicación y reintento se especificarán en ADR-007 y ADR-010.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Respaldo y validación prevista}\par\nobreak\smallskip
+
+El inventario, la matriz y los mapas de A1 respaldan el contexto de esta decisión. En Fase 6 se verificará la lectura mediante API, el recorrido edición \ensuremath{\rightarrow} Webhook \ensuremath{\rightarrow} evento \ensuremath{\rightarrow} reindexación y el acceso mediante gateway. La implementación se contrastará con esos resultados antes de considerar validado el diseño.
+
+\clearpage
+\subsubsection{ADR-007 — Selección del broker de mensajes}
+\label{adr:007}
+
+\begin{adrbox}{Estatus de ADR-007}
+Aceptado para el diseño por el equipo. Validación operativa prevista en Fase 6.
+\end{adrbox}
+
+\par\medskip\noindent\textbf{Contexto}\par\nobreak\smallskip
+
+Una edición de BookStack debe actualizar búsqueda y auditoría mediante el mismo evento. Los consumidores necesitan posiciones independientes y recuperación de mensajes publicados mientras están detenidos. Se requieren persistencia, confirmación manual, reintentos limitados y mensajes fallidos conservados para diagnóstico. El laboratorio tiene recursos de memoria acotados.
+
+\par\medskip\noindent\textbf{Decisión}\par\nobreak\smallskip
+
+Usar NATS con JetStream habilitado como broker de eventos. Configurar un stream de páginas con almacenamiento en archivo sobre un volumen persistente y consumidores pull durables independientes para búsqueda y auditoría. Cada consumidor tendrá confirmación explícita después de persistir su resultado. Los trabajos de exportación conservarán su mecanismo de cola propio conforme a ADR-009.
+
+El refinamiento del contrato A3 establece que \path{event-bridge} guardará inbox y outbox de forma atómica antes de devolver 202 al Webhook. El publicador esperará la confirmación de JetStream antes de marcar la salida como enviada. Mantendrá el mismo \path{event_id} al reintentar el evento normalizado y deduplicará la entrada conforme al contrato del puente.
+
+El diseño inicial utiliza un broker con una réplica de almacenamiento. Esto cubre reinicios del proceso y del nodo con el mismo disco disponible. La réplica única concentra la disponibilidad del broker en ese nodo y no protege frente a pérdida del volumen.
+
+Se usarán límites explícitos de memoria, disco y retención. La capacidad y el período de conservación deben cubrir las pruebas de caída de consumidores y medirse antes del despliegue final. La recuperación a DLQ se implementará explícitamente conforme a ADR-010. Alcanzar \path{MaxDeliver} en JetStream no equivale a mover automáticamente el mensaje a una DLQ.
+
+\par\medskip\noindent\textbf{Alternativas descartadas}\par\nobreak\smallskip
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Alternativa} & \textbf{Qué ofrece} & \textbf{Motivo de descarte para este diseño} \\
+\midrule
+RabbitMQ & Acknowledgements, publisher confirms, enrutamiento y dead-lettering configurable. & Es válido para el TP, pero requeriría adoptar su modelo de exchanges, colas y políticas. Se prefiere el modelo de stream con consumidores independientes para los eventos de páginas. El consumo relativo de RAM entre productos no se considera medido. \\
+Redis Streams como broker general & Streams, grupos de consumidores, pendientes y recuperación de trabajo. & Redis se reserva para los trabajos de exportación. Separar el broker de eventos permite administrar su retención y consumidores sin compartir el ciclo de vida de los jobs. Redis Streams también necesitaría políticas explícitas de persistencia y mensajes fallidos. \\
+Core NATS sin JetStream & Pub/sub entre procesos conectados. & La persistencia y recuperación de eventos durante la caída de consumidores requieren JetStream. \\
+\bottomrule
+\end{tabularx}
+\caption{Comparación y alcance de la decisión ADR-007.}
+\label{tab:adr-007}
+\end{table}
+
+\par\medskip\noindent\textbf{Consecuencias}\par\nobreak\smallskip
+
+\par\medskip\noindent\textbf{Favorables}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item Un mismo evento de página puede ser procesado por búsqueda y auditoría con cursores separados.
+\item El consumidor puede recuperar mensajes pendientes después de un reinicio.
+\item Los ack explícitos permiten confirmar después de guardar el efecto del evento.
+\item Stream y consumidores forman una frontera de integración independiente de las tablas de BookStack.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Costos y limitaciones}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item Hay que operar el volumen, los límites de retención, el monitoreo de pendientes y el procedimiento de DLQ.
+\item La entrega al menos una vez permite duplicados, por lo que exige idempotencia en cada servicio.
+\item Una instancia inicial es un punto único de falla. La indisponibilidad del broker necesita reintentos del productor y visibilidad de los fallos de Webhooks.
+\item Una confirmación del broker no demuestra que los consumidores ya hayan procesado el evento.
+\item La elección por modelo operativo debe contrastarse con consumo real. No se atribuyen cifras de ahorro de RAM sin una medición.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Respaldo y validación prevista}\par\nobreak\smallskip
+
+Guardar configuración de streams y consumidores, prueba de publicación confirmada, reinicio del consumidor y prueba de DLQ. Medir memoria y disco con la carga de laboratorio. La aceptación de Webhooks durante una caída del broker debe probarse desde BookStack; si no ofrece reintentos suficientes, habrá que agregar almacenamiento durable de entrada en \path{event-bridge} antes de reconocer el evento.
+
+\par\medskip\noindent\textbf{Fuentes}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item \href{https://docs.nats.io/concepts/jetstream}{JetStream y su modelo de persistencia y consumidores}
+\item \href{https://docs.nats.io/learn/jetstream/pull-consumers}{Consumidores pull y confirmaciones}
+\item \href{https://www.rabbitmq.com/docs/confirms}{RabbitMQ, acknowledgements y publisher confirms}
+\item \href{https://redis.io/docs/latest/develop/data-types/streams/}{Redis Streams}
+\end{itemize}
+
+\clearpage
+\subsubsection{ADR-008 — Plataforma de orquestación}
+\label{adr:008}
+
+\begin{adrbox}{Estatus de ADR-008}
+Aceptado para el diseño por el equipo. La habilitación de VM-2 está condicionada a verificar memoria disponible y consumo conjunto del laboratorio.
+\end{adrbox}
+
+\par\medskip\noindent\textbf{Contexto}\par\nobreak\smallskip
+
+El TP requiere despliegue reproducible, recuperación de servicios y escalado de workers, con el monolito operativo ante la caída de servicios o VM-2. El equipo utiliza VMware y tiene una VM base con 2 vCPU y 4 GB asignados. Ubuntu reportó 3,3 GiB de RAM visible y 2,6 GiB disponibles en el relevamiento inicial.
+
+El anfitrión Windows reportó 16.442.781.696 bytes de RAM física, 12 procesadores lógicos y 16.057.404 KiB de memoria visible. En la consulta de A2 tenía 2.249.404 KiB libres, aproximadamente 2,1 GiB. El total físico y la memoria visible miden cosas distintas y los valores libres corresponden a un instante. El respaldo se guarda en \path{recursos-a2.txt}.
+
+La memoria libre observada requiere liberar aplicaciones o cargas antes de agregar una VM de 4 GB. Los recursos del anfitrión y de las VM deben verificarse de nuevo antes de instalar la plataforma y antes de las pruebas de carga.
+
+\par\medskip\noindent\textbf{Decisión}\par\nobreak\smallskip
+
+Adoptar Docker Swarm como orquestador del diseño, con dos VM en el laboratorio inicial.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Nodo} & \textbf{Rol previsto} & \textbf{Asignación y criterio} \\
+\midrule
+VM-1, \path{arqwebserver} & Monolito, gateway y manager de Swarm & Conservar 2 vCPU y 4 GB de la VM base. Excluir las tareas de los nuevos servicios mediante disponibilidad \path{drain}, conservando la función de manager. \\
+VM-2, \path{cna-node1} & Worker de Swarm, servicios y persistencia & Prever 2 vCPU y 4 GB, con límites por contenedor. Confirmar que el anfitrión sostenga ambas VM antes de crearla. \\
+\bottomrule
+\end{tabularx}
+\caption{Comparación y alcance de la decisión ADR-008.}
+\label{tab:adr-008}
+\end{table}
+
+El manager mantendrá el estado deseado y las réplicas de los servicios. Los export-workers podrán escalar de una a tres réplicas. Las imágenes se construirán y estarán disponibles antes de \path{docker stack deploy}; el stack no realiza la construcción de Dockerfiles.
+
+Los almacenes con volúmenes locales se fijarán a VM-2 mediante restricciones de ubicación. Una caída de VM-2 detendrá esos componentes hasta recuperar el nodo y sus discos, mientras BookStack continuará en VM-1. El regreso del nodo debe permitir reconciliar los servicios automáticamente.
+
+Los endpoints de servicio se publicarán de forma restringida sobre el nodo de servicios, sin abrir el routing mesh sobre todas las interfaces externas. UFW y las reglas efectivas de Docker se verificarán juntos. El tráfico entre nodos usará la red interna y los puertos de clúster necesarios, limitados por origen. El acceso externo de aplicación seguirá el gateway de VM-1.
+
+\par\medskip\noindent\textbf{Alternativas descartadas}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item \textbf{Docker Compose sobre VM-2.} Es una base válida y de menor complejidad para un solo host. Se elige Swarm por su estado deseado, reemplazo de tareas y manejo de réplicas, útiles para los experimentos de caída y escalado. Compose queda como alternativa si las mediciones obligan a revisar este ADR, con su impacto en las pruebas y rúbrica documentado.
+\item \textbf{k3s.} Ofrece el modelo Kubernetes, pero agrega aprendizaje y operación de su plano de control. Sus mínimos oficiales excluyen la carga de aplicaciones. En el presupuesto inicial se prioriza una plataforma más acotada al objetivo del TP.
+\item \textbf{Tres VM desde el inicio.} Con la memoria libre observada, una tercera VM necesita primero demostrar capacidad del anfitrión. La observabilidad se presupuestará inicialmente en VM-2 y se trasladará solo si las mediciones justifican otro nodo.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Consecuencias}\par\nobreak\smallskip
+
+\par\medskip\noindent\textbf{Favorables}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item Permite declarar réplicas y mantener el estado deseado de servicios.
+\item Proporciona un mecanismo de despliegue por stack y acceso a secretos por servicio.
+\item Separa el ciclo de vida de servicios y monolito en dos VM.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Costos y limitaciones}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item Un solo manager es un punto único de falla del plano de control. Dos nodos con un manager no constituyen alta disponibilidad.
+\item Los volúmenes locales fijan los servicios con estado a VM-2 y requieren respaldo y recuperación del mismo almacenamiento.
+\item El uso de Swarm añade puertos internos, restricciones de ubicación y reglas de publicación que deben verificarse.
+\item La planificación de 4 GB por VM no garantiza que todos los servicios y observabilidad entren. Los límites deben sumar menos que la memoria visible del nodo, dejando margen al SO y Docker; CPU, swap, disco y latencia se medirán bajo carga.
+\item El snapshot de memoria del anfitrión exige preparar el entorno antes de ejecutar dos VM simultáneamente.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Respaldo y validación prevista}\par\nobreak\smallskip
+
+Conservar mediciones de Windows y Ubuntu, listado de nodos, límites de contenedores y consumo en reposo/carga. Probar reemplazo de una tarea, escalado 1 \ensuremath{\rightarrow} 3 de workers y recuperación tras apagar/encender VM-2. Medir BookStack mientras se ejecutan los servicios. Si no hay margen, revisar este ADR y el presupuesto antes del despliegue final.
+
+\par\medskip\noindent\textbf{Fuentes}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item \href{https://docs.docker.com/engine/swarm/how-swarm-mode-works/nodes/}{Docker Swarm, managers y workers}
+\item \href{https://docs.docker.com/engine/swarm/services/}{Servicios, réplicas, ubicación y publicación de puertos}
+\item \href{https://docs.docker.com/compose/how-tos/production/}{Docker Compose en producción}
+\item \href{https://docs.k3s.io/installation/requirements}{Requisitos de k3s}
+\end{itemize}
+
+\clearpage
+\subsubsection{ADR-009 — Base de datos por servicio}
+\label{adr:009}
+
+\begin{adrbox}{Estatus de ADR-009}
+Aceptado para el diseño por el equipo. Versiones de imágenes, cuotas y permisos se verificarán durante la implementación.
+\end{adrbox}
+
+\par\medskip\noindent\textbf{Contexto}\par\nobreak\smallskip
+
+A1 mostró tablas compartidas de contenido, índice, actividad y autorización. Los nuevos servicios necesitan persistencia propia, reemplazo de contenedores sin pérdida de datos e independencia respecto del esquema de BookStack. MariaDB debe permanecer accesible localmente en VM-1 y los microservicios deben integrarse por API y eventos.
+
+\par\medskip\noindent\textbf{Decisión}\par\nobreak\smallskip
+
+Usar persistencia lógica independiente por servicio, con credenciales y permisos específicos, migraciones propias y almacenamiento fuera de la capa escribible del contenedor.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Servicio} & \textbf{Almacén propuesto} & \textbf{Propiedad de datos} \\
+\midrule
+S1 búsqueda & PostgreSQL, base \path{search_db}, rol propio & Proyección del contenido, índice de texto completo y eventos aplicados. El índice se reconstruye por API y eventos. \\
+S2 auditoría & PostgreSQL, base \path{audit_db}, rol propio & Registros de eventos, actor, objeto, fecha y \path{request_id}; unicidad de \path{event_id}. \\
+S3 exportación & Redis para trabajos; bucket \path{exports} en MinIO & Estados y cola de jobs, resultados y archivos con URLs prefirmadas temporales. API y workers de S3 comparten esos datos porque pertenecen al mismo servicio. \\
+S4 medios & Bucket \path{media} en MinIO, credencial y política propias & Originales y miniaturas identificados por claves de objetos y metadatos. \\
+event-bridge & PostgreSQL, base \path{bridge_db}, rol propio & Inbox, deduplicación y outbox de publicación definidos al refinar A3. \\
+\bottomrule
+\end{tabularx}
+\caption{Comparación y alcance de la decisión ADR-009.}
+\label{tab:adr-009}
+\end{table}
+
+Inicialmente \path{search_db} y \path{audit_db} podrán residir en una sola instancia PostgreSQL para limitar procesos en la VM. Cada rol tendrá \path{CONNECT} y permisos únicamente sobre su base. Se revocarán privilegios públicos que permitan acceso cruzado y se probará el rechazo entre roles. Ningún servicio dispondrá de un usuario superadministrador ni consultará las tablas del otro.
+
+Los buckets compartirán una instancia MinIO con políticas separadas. Redis se dedicará a S3 y se configurará con persistencia AOF y volumen. Su política de sincronización y la recuperación de jobs se probarán antes de aceptar la durabilidad del flujo. La URL prefirmada deberá ser accesible desde el cliente a través del gateway y mantener la firma válida.
+
+La clave y la contraseña de MariaDB no se entregarán a los servicios. La API de BookStack proveerá el contenido autorizado que necesiten. Los volúmenes persistentes se ubicarán y respaldarán conforme al ADR-008.
+
+\par\medskip\noindent\textbf{Alternativas descartadas}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item \textbf{Compartir tablas o credenciales de MariaDB.} Conserva el acoplamiento analizado y evita la frontera de autorización y contratos establecida para los servicios.
+\item \textbf{Una única base con tablas y usuario compartidos para todos los servicios.} Permite consultas y cambios cruzados que comprometen la autonomía y la propiedad de datos.
+\item \textbf{Una instancia PostgreSQL por servicio desde el inicio.} Refuerza el aislamiento físico, pero agrega procesos y consumo fijo. Se empieza con bases y roles aislados en una instancia y se conserva la posibilidad de separarlos físicamente.
+\item \textbf{Meilisearch para S1.} Es una alternativa especializada válida. Se propone PostgreSQL FTS para combinar proyección, índice y deduplicación en transacciones del servicio y reutilizar operación de un solo motor relacional. La latencia de búsqueda se medirá; la elección no implica superioridad de rendimiento.
+\item \textbf{Archivos dentro del contenedor.} La recreación del contenedor comprometería su conservación. Se usan volúmenes del almacén y almacenamiento de objetos.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Consecuencias}\par\nobreak\smallskip
+
+\par\medskip\noindent\textbf{Favorables}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item Cada servicio evoluciona su esquema y solo expone datos mediante contratos.
+\item El índice y la auditoría pueden registrar el procesamiento del evento junto con su resultado en su propia transacción.
+\item La recreación de APIs y workers conserva los datos administrados por los almacenes.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Costos y limitaciones}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item La instancia PostgreSQL compartida conserva un dominio de falla y competencia de recursos comunes, aunque las bases estén aisladas lógicamente.
+\item MinIO compartido también concentra disponibilidad y disco. Las políticas deben impedir acceso de S4 al bucket de S3 y viceversa.
+\item Redis, PostgreSQL y MinIO requieren volúmenes, cuotas, backup y pruebas de restauración.
+\item Los datos replicados por eventos tienen consistencia eventual y necesitan procedimientos de recuperación.
+\item AOF, volúmenes y confirmaciones no sustituyen la prueba de durabilidad frente al tipo de falla elegido.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Respaldo y validación prevista}\par\nobreak\smallskip
+
+Guardar el inventario de almacenes, permisos por rol/bucket, pruebas negativas de acceso cruzado, recreación de contenedores y recuperación de datos. Verificar en VM-1 que ningún servicio abra conexiones a MariaDB. Registrar la persistencia de trabajos de exportación y la descarga de archivos por el gateway.
+
+\par\medskip\noindent\textbf{Fuentes}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item \href{https://www.postgresql.org/docs/current/ddl-priv.html}{Privilegios de PostgreSQL}
+\item \href{https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/}{Persistencia de Redis}
+\end{itemize}
+
+\clearpage
+\subsubsection{ADR-010 — Consistencia eventual, idempotencia y mensajes fallidos}
+\label{adr:010}
+
+\begin{adrbox}{Estatus de ADR-010}
+Aceptado para el diseño por el equipo. Las garantías se verificarán con pruebas de duplicación, reentrega, caída y recuperación.
+\end{adrbox}
+
+\par\medskip\noindent\textbf{Contexto}\par\nobreak\smallskip
+
+La búsqueda y la auditoría se actualizan de forma asíncrona. Un mensaje puede entregarse nuevamente si el consumidor guarda el resultado y falla antes de confirmar. También puede fallar de forma transitoria o permanente, llegar fuera de orden o agotar su ventana de conservación. La edición de una página debe reflejarse en el índice en menos de cinco segundos según los criterios del TP.
+
+\par\medskip\noindent\textbf{Decisión}\par\nobreak\smallskip
+
+Adoptar consistencia eventual y entrega al menos una vez, con efectos idempotentes por consumidor. El identificador \path{event_id} pertenece al evento lógico y se mantiene en sus reintentos y reenvíos a DLQ. El sobre incluye además \path{type}, \path{version}, \path{occurred_at}, \path{request_id} y \path{payload}, que se definirán en AsyncAPI durante A3.
+
+\par\medskip\noindent\textbf{Persistencia y confirmación}\par\nobreak\smallskip
+
+\begin{enumerate}[leftmargin=1.5em,itemsep=3pt]
+\item Validar el sobre y la versión antes de aplicar el evento.
+\item En auditoría, usar una restricción única por \path{event_id}. La inserción y cualquier marca de procesamiento se confirman en una misma transacción local.
+\item En búsqueda, mantener el registro del evento aplicado y la actualización de la proyección en una misma transacción de \path{search_db}. La consulta a la API ocurre con timeout y tratamiento de errores; el guardado se serializa por entidad y respeta versiones de contenido cuando estén disponibles.
+\item Confirmar el mensaje al broker después de completar la transacción. Si el evento ya está aplicado, reconocerlo sin repetir el efecto.
+\item Ante una falla previa al commit, permitir la reentrega. Si el commit se completó pero se perdió el ack, la restricción de idempotencia evita el efecto duplicado.
+\end{enumerate}
+
+El registro de deduplicación debe conservarse como mínimo durante la retención y la ventana de replay de los eventos. Cada consumidor tiene su registro propio, por lo que S1 y S2 pueden procesar legítimamente el mismo \path{event_id} una vez cada uno.
+
+\par\medskip\noindent\textbf{Orden y reconciliación}\par\nobreak\smallskip
+
+S1 consultará el estado actual de la página y serializará sus actualizaciones por entidad. Se documentará el criterio de versión o reconciliación para evitar que una respuesta antigua sobrescriba una nueva. Un borrado conserva una marca de eliminación o un criterio equivalente para evitar resurrección por eventos atrasados. Un error de autorización o un timeout no se interpretará como prueba de borrado.
+
+La indexación inicial y la reconciliación por API complementan los Webhooks. El orden de creación del consumidor y de la carga inicial, junto con el replay, debe cubrir las ediciones concurrentes con esa carga. Las condiciones exactas se formalizarán en los contratos y pruebas de S1.
+
+\par\medskip\noindent\textbf{Reintentos y DLQ}\par\nobreak\smallskip
+
+Se propone un máximo de cinco intentos por consumidor, con esperas crecientes y jitter, y timeouts explícitos hacia BookStack. Los errores permanentes de esquema o versión se envían a DLQ con su causa, mientras los transitorios usan reintentos acotados.
+
+La DLQ conservará el sobre original, el consumidor, la causa, los intentos y las marcas temporales. El traslado espera confirmación de persistencia en el destino antes de reconocer o terminar el original. Si ocurre una caída entre esos pasos, la duplicación en la DLQ se controla con la clave \path{(consumer, event_id)}.
+
+JetStream requiere implementar esa transferencia. Se supervisarán también los avisos de entrega agotada para recuperar mensajes que lleguen al límite después de la caída de un consumidor. Los mensajes agotados deben quedar recuperables en el stream hasta confirmar su traslado. El monitoreo alertará por DLQ y por mensajes agotados pendientes de transferencia.
+
+El replay conserva el \path{event_id}. Un evento que nunca se aplicó podrá procesarse tras corregir su causa. Una reparación que busque cambiar un efecto ya aplicado requerirá una operación explícita de reconciliación o compensación, con un nuevo identificador y relación con el original.
+
+\par\medskip\noindent\textbf{Trabajos de exportación}\par\nobreak\smallskip
+
+La idempotencia de una solicitud HTTP se tratará mediante una clave de solicitud y su \path{job_id}, separada del \path{event_id} de sus eventos. La creación del estado y la inserción en la cola de Redis deben ser atómicas. El worker tendrá un mecanismo de reserva recuperable y actualizará estado y resultado de forma idempotente. Una caída no debe dejar un job en \path{running} indefinidamente. El objeto tendrá una clave estable por job para permitir reintentos sin multiplicar resultados.
+
+\par\medskip\noindent\textbf{Alternativas descartadas}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item \textbf{Confirmar antes de guardar.} Una caída entre ack y persistencia puede perder el efecto de un mensaje ya reconocido.
+\item \textbf{Suponer entrega exactamente una vez para toda la operación.} La transacción del almacén y el ack del broker son pasos diferentes. Las capacidades de deduplicación del broker no sustituyen la idempotencia del efecto de negocio.
+\item \textbf{Reintentar indefinidamente.} Un mensaje inválido puede consumir capacidad y ocultar una falla permanente.
+\item \textbf{Deduplicar solo en memoria.} El reinicio del proceso pierde el registro de eventos aplicados.
+\item \textbf{Descartar al agotar intentos.} Impide diagnosticar y recuperar el evento, contrario al objetivo de entrega confiable del TP.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Consecuencias}\par\nobreak\smallskip
+
+\par\medskip\noindent\textbf{Favorables}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item Permite recuperar eventos tras una caída y evitar efectos duplicados verificables.
+\item Los fallos permanentes quedan disponibles para diagnóstico y replay controlado.
+\item Las restricciones locales y el ack posterior mantienen consistente la proyección de cada servicio frente a reentregas.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Costos y limitaciones}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item El usuario puede observar temporalmente datos anteriores en búsqueda mientras se procesa un evento.
+\item Se requieren tablas de eventos procesados, versiones o serialización por entidad, cuotas y limpieza compatible con el replay.
+\item La DLQ y su transferencia agregan código y operación y necesitan pruebas de caída en sus puntos intermedios.
+\item El umbral de cinco segundos depende de carga, disponibilidad y reintentos. Su cumplimiento se medirá desde la edición hasta la consulta del índice.
+\item La durabilidad comienza en la aceptación persistente de cada tramo. Se deberá comprobar también la recuperación del tramo BookStack \ensuremath{\rightarrow} event-bridge.
+\end{itemize}
+
+\par\medskip\noindent\textbf{Respaldo y validación prevista}\par\nobreak\smallskip
+
+Enviar el mismo evento dos veces y verificar un solo efecto por consumidor. Detener auditoría mientras se editan 20 páginas y comprobar su recuperación. Forzar un error permanente y observar la DLQ. Interrumpir el consumidor después del commit y antes del ack. Probar orden invertido de actualización/borrado y caída de un worker durante un job. Conservar logs, IDs y tiempos de cada experimento.
+
+\par\medskip\noindent\textbf{Fuentes}\par\nobreak\smallskip
+
+\begin{itemize}[leftmargin=1.5em,itemsep=3pt]
+\item \href{https://docs.nats.io/concepts/jetstream}{Persistencia y entrega de JetStream}
+\item \href{https://docs.nats.io/learn/jetstream/pull-consumers}{Consumidores y confirmaciones}
+\item \href{https://redis.io/docs/latest/develop/data-types/streams/}{Redis Streams y grupos de consumidores}
+\end{itemize}
+
+\clearpage
+\subsubsection{Resultado de A2}
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{p{1.6cm}X}
+\toprule
+\textbf{Registro} & \textbf{Decisión aceptada para el diseño} \\
+\midrule
+ADR-006 & Strangler Fig mediante API REST y Webhooks. \\
+ADR-007 & NATS JetStream con consumidores durables y confirmación explícita. \\
+ADR-008 & Swarm en dos VM, con verificación de memoria previa a habilitar VM-2. \\
+ADR-009 & Persistencia por servicio, aislamiento de bases, roles y buckets. \\
+ADR-010 & Consistencia eventual, efectos idempotentes, reintentos y DLQ. \\
+\bottomrule
+\end{tabularx}
+\caption{Cierre de A2 y decisiones de arquitectura.}
+\label{tab:f5-a2-cierre}
+\end{table}
+Los cinco ADR conservan alternativas descartadas y consecuencias negativas. Su aceptación cierra el producto de diseño A2 y establece las decisiones que se verificarán durante la construcción y las pruebas de las siguientes fases.
+\endgroup

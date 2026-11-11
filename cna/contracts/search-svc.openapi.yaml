@@ -1,0 +1,556 @@
+openapi: 3.1.0
+info:
+  title: search-svc — BookStack CNA
+  version: 1.0.0
+  description: Búsqueda de libros y páginas con resaltado y enlaces a BookStack.
+  contact:
+    name: Equipo 03 — Arquitectura Web FP-UNA
+  license:
+    name: Uso académico — TP Integrador II
+servers:
+  - url: https://api.bookstack.local
+    description: Gateway único TLS del laboratorio.
+tags:
+  - name: search-svc
+    description: Búsqueda de libros y páginas con resaltado y enlaces a BookStack.
+  - name: operations
+    description: Sondas y métricas en la red interna.
+security:
+  - ServiceApiKey: []
+paths:
+  /healthz:
+    get:
+      operationId: search_svc_health
+      summary: Comprobar vida
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar vida
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              examples:
+                example:
+                  summary: Comprobar vida
+                  value:
+                    status: ok
+                    service: search-svc
+      security: []
+      servers:
+        - url: http://search-svc:8000
+          description: Red interna de servicios.
+  /readyz:
+    get:
+      operationId: search_svc_ready
+      summary: Comprobar disponibilidad
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar disponibilidad
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ready"
+              examples:
+                example:
+                  summary: Comprobar disponibilidad
+                  value:
+                    status: ready
+                    service: search-svc
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://search-svc:8000
+          description: Red interna de servicios.
+  /metrics:
+    get:
+      operationId: search_svc_metrics
+      summary: Consultar métricas Prometheus
+      description: Métricas internas de solicitudes por código e histograma de duración. La instrumentación
+        incorporará las series necesarias para p50/p95/p99.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Exposición Prometheus.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                example:
+                  summary: Exposición Prometheus.
+                  value: |
+                    http_requests_total{code="200"} 1
+                    http_request_duration_seconds_bucket{le="0.1"} 1
+                    http_request_duration_seconds_bucket{le="+Inf"} 1
+                    http_request_duration_seconds_sum 0.05
+                    http_request_duration_seconds_count 1
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://search-svc:8000
+          description: Red interna de servicios.
+  /v2/search:
+    get:
+      operationId: searchPages
+      summary: Buscar contenido indexado
+      description: Busca por título de página, cuerpo y título de libro. Cero coincidencias devuelve 200 con
+        items vacío. Solo se indexa y expone contenido del alcance autorizado de la cuenta de servicio y
+        de la credencial de acceso del laboratorio. El resaltado escapa el texto de origen y solo añade
+        etiquetas mark. La actualización por evento debe ser visible en menos de cinco segundos bajo la
+        prueba de aceptación. La carga inicial recorre /api/pages y /api/books con paginación. Los
+        resultados distinguen libros y páginas mediante entity_type y entity_id. La revisión del catálogo
+        de libros por API complementa los eventos de páginas; las pruebas de actualización menor a cinco
+        segundos se aplican a la edición de páginas.
+      tags:
+        - search-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: q
+          in: query
+          required: true
+          description: Términos de búsqueda; se rechazan valores vacíos o solo espacios.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+            pattern: \S
+          example: nginx
+        - name: limit
+          in: query
+          required: false
+          description: Máximo de resultados por página.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 20
+        - name: offset
+          in: query
+          required: false
+          description: Cantidad de registros a omitir.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: entity_type
+          in: query
+          required: false
+          description: Filtra por páginas o libros. Ausente devuelve ambos tipos.
+          schema:
+            type: string
+            enum:
+              - page
+              - book
+          example: page
+      responses:
+        "200":
+          description: Resultados de búsqueda.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+              examples:
+                example:
+                  summary: Resultados de búsqueda.
+                  value:
+                    query: nginx
+                    total: 2
+                    limit: 20
+                    offset: 0
+                    items:
+                      - title: Configuración de Nginx
+                        url: https://bookstack.local/books/infraestructura/page/nginx
+                        book:
+                          id: 7
+                          title: Infraestructura
+                        score: 0.82
+                        highlights:
+                          title: Configuración de <mark>Nginx</mark>
+                          body: El proxy <mark>Nginx</mark> recibe HTTPS.
+                          book_title: Infraestructura
+                        entity_type: page
+                        entity_id: 42
+                      - entity_type: book
+                        entity_id: 7
+                        title: Infraestructura
+                        url: https://bookstack.local/books/infraestructura
+                        score: 0.65
+                        highlights:
+                          title: Infraestructura
+                          body: Manual de <mark>Nginx</mark>.
+                          book_title: Infraestructura
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+components:
+  securitySchemes:
+    ServiceApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Credencial de consumidor autorizada para este servicio. Se configura como secreto y no es el
+        token de la API de BookStack.
+  schemas:
+    RequestId:
+      type: string
+      minLength: 1
+      maxLength: 128
+      pattern: ^[A-Za-z0-9._-]+$
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              minLength: 1
+            message:
+              type: string
+              minLength: 1
+            request_id:
+              $ref: "#/components/schemas/RequestId"
+          required:
+            - code
+            - message
+            - request_id
+          additionalProperties: false
+      required:
+        - error
+      additionalProperties: false
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    Ready:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    SearchHit:
+      oneOf:
+        - $ref: "#/components/schemas/PageSearchHit"
+        - $ref: "#/components/schemas/BookSearchHit"
+    SearchResults:
+      type: object
+      properties:
+        query:
+          type: string
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchHit"
+      required:
+        - query
+        - total
+        - limit
+        - offset
+        - items
+      additionalProperties: false
+    PageSearchHit:
+      type: object
+      properties:
+        entity_type:
+          type: string
+          const: page
+        entity_id: &a1
+          type: integer
+          minimum: 1
+        title: &a2
+          type: string
+          minLength: 1
+        url: &a3
+          type: string
+          format: uri
+          pattern: ^https://bookstack\.local/
+        score: &a4
+          type: number
+          minimum: 0
+        highlights: &a5
+          type: object
+          properties:
+            title:
+              type: string
+            body:
+              type: string
+            book_title:
+              type: string
+          required:
+            - title
+            - body
+            - book_title
+          additionalProperties: false
+        book:
+          type: object
+          properties:
+            id:
+              type: integer
+              minimum: 1
+            title:
+              type: string
+              minLength: 1
+          required:
+            - id
+            - title
+          additionalProperties: false
+      required:
+        - entity_type
+        - entity_id
+        - title
+        - url
+        - score
+        - highlights
+        - book
+      additionalProperties: false
+    BookSearchHit:
+      type: object
+      properties:
+        entity_type:
+          type: string
+          const: book
+        entity_id: *a1
+        title: *a2
+        url: *a3
+        score: *a4
+        highlights: *a5
+      required:
+        - entity_type
+        - entity_id
+        - title
+        - url
+        - score
+        - highlights
+      additionalProperties: false

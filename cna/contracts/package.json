@@ -1,0 +1,20 @@
+{
+  "name": "bookstack-cna-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "description": "Validación reproducible de los contratos de A3 y evidencia F5-E4.",
+  "scripts": {
+    "validate": "node validate.mjs"
+  },
+  "devDependencies": {
+    "@asyncapi/parser": "^3.6.6",
+    "@stoplight/spectral-cli": "^6.17.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.9.1"
+  }
+}

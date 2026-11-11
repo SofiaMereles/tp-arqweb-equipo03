@@ -1,0 +1,15 @@
+F5-E4 / P29 — PASS
+Fecha UTC: 2026-11-11T17:41:57.938Z
+Nodo: SOFI_PORTATIL
+Usuario: sofii
+Node: v24.22.1
+Herramientas: {"@stoplight/spectral-cli":"6.17.1","@asyncapi/parser":"3.6.6","ajv":"8.20.0","ajv-formats":"3.0.1","yaml":"2.9.1"}
+search-svc.openapi.yaml: Spectral — 0 diagnósticos; SHA256 4bc03651ede3bb153eff99b495fce2863e1da32f1544de1362cb6bdbd550d711
+audit-svc.openapi.yaml: Spectral — 0 diagnósticos; SHA256 1c6d18a654f967c1228fcdc2efb112b3e6ec500709867b20d30e50943e95edea
+export-svc.openapi.yaml: Spectral — 0 diagnósticos; SHA256 3755c1fcb56465f36a5e3751550c9ab16fcb112bd85c074e606aee40946bb1f8
+media-svc.openapi.yaml: Spectral — 0 diagnósticos; SHA256 ac92101f303c3b92f104acbb3ec7a7ae791b4e1aa6178560879da4eec1632678
+event-bridge.openapi.yaml: Spectral — 0 diagnósticos; SHA256 322bf0cc6d45d9b408d9b12c51e242ac513692515c1e64d5f7667ca8a354fcfc
+bookstack.asyncapi.yaml: @asyncapi/parser — 1 diagnósticos; SHA256 17e548d0ef14178c2cf2817da4cae3e2c5072500a8107870c69cd14b55cf145b
+Ejemplos comprobados contra sus esquemas: 242
+Entradas inválidas rechazadas según lo esperado: 9
+Errores: 0

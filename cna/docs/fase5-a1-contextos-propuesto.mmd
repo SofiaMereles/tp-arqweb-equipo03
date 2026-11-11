@@ -1,0 +1,29 @@
+%% F5-E3 / P28. Flechas del proveedor de informacion/capacidad al consumidor.
+flowchart TB
+    BS[BookStack - contenido, usuarios y permisos]
+    HTTP[API REST - proveedor de contenido autorizado]
+    WH[Webhooks - proveedor de eventos]
+    ACLAPI[Capa anticorrupcion HTTP - adaptadores en cada servicio]
+    ACLEV[Capa anticorrupcion de eventos - event-bridge]
+    BUS[Canales de eventos - plataforma por decidir en A2]
+    S1[Busqueda - cliente de contenido y eventos]
+    S2[Auditoria - consumidor de eventos]
+    S3[Exportacion - cliente de contenido]
+    S4[Medios - proveedor de archivos y eventos]
+    BS --> HTTP
+    BS --> WH
+    HTTP --> ACLAPI
+    ACLAPI -->|Cliente/proveedor| S1
+    ACLAPI -->|Cliente/proveedor| S3
+    WH --> ACLEV --> BUS
+    BUS --> S1
+    BUS --> S2
+    S4 -->|Evento de subida| BUS
+    S4 -->|URL de archivo - vinculo propuesto| BS
+    S1 --- D1[(Indice propio)]
+    S2 --- D2[(Auditoria propia)]
+    S3 --- D3[(Trabajos y artefactos propios)]
+    S4 --- D4[(Archivos y miniaturas propios)]
+    %% El enlace de medios es una propuesta de integracion por URL/API.
+    %% La autorizacion de cada servicio y la conservacion de visibilidad
+    %% requieren contratos y decisiones en A2/A3.

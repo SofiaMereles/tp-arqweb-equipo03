@@ -1,0 +1,596 @@
+asyncapi: 3.0.0
+id: urn:fpuna:equipo03:bookstack:cna:events
+info:
+  title: Eventos BookStack CNA
+  version: 1.0.0
+  description: Catálogo de integración de la plataforma. Las operaciones send/receive se describen desde el
+    componente indicado por x-service. Los consumidores de páginas son independientes.
+  contact:
+    name: Equipo 03 — Arquitectura Web FP-UNA
+  license:
+    name: Uso académico
+defaultContentType: application/json
+servers:
+  internal:
+    host: nats:4222
+    protocol: nats
+    description: JetStream en la red privada.
+    security:
+      - $ref: "#/components/securitySchemes/BrokerCredentials"
+channels:
+  PageCreated:
+    address: bookstack.page.created
+    description: Canal durable para bookstack.page.created.
+    servers:
+      - $ref: "#/servers/internal"
+    messages:
+      event:
+        $ref: "#/components/messages/PageCreated"
+    x-stream: BOOKSTACK_PAGES
+  PageUpdated:
+    address: bookstack.page.updated
+    description: Canal durable para bookstack.page.updated.
+    servers:
+      - $ref: "#/servers/internal"
+    messages:
+      event:
+        $ref: "#/components/messages/PageUpdated"
+    x-stream: BOOKSTACK_PAGES
+  PageDeleted:
+    address: bookstack.page.deleted
+    description: Canal durable para bookstack.page.deleted.
+    servers:
+      - $ref: "#/servers/internal"
+    messages:
+      event:
+        $ref: "#/components/messages/PageDeleted"
+    x-stream: BOOKSTACK_PAGES
+  ExportRequested:
+    address: export.requested
+    description: Canal durable para export.requested.
+    servers:
+      - $ref: "#/servers/internal"
+    messages:
+      event:
+        $ref: "#/components/messages/ExportRequested"
+    x-stream: PLATFORM_EVENTS
+  ExportCompleted:
+    address: export.completed
+    description: Canal durable para export.completed.
+    servers:
+      - $ref: "#/servers/internal"
+    messages:
+      event:
+        $ref: "#/components/messages/ExportCompleted"
+    x-stream: PLATFORM_EVENTS
+  MediaUploaded:
+    address: media.uploaded
+    description: Canal durable para media.uploaded.
+    servers:
+      - $ref: "#/servers/internal"
+    messages:
+      event:
+        $ref: "#/components/messages/MediaUploaded"
+    x-stream: PLATFORM_EVENTS
+operations:
+  sendPageCreated:
+    action: send
+    channel:
+      $ref: "#/channels/PageCreated"
+    summary: event-bridge publica bookstack.page.created.
+    x-service: event-bridge
+    messages:
+      - $ref: "#/channels/PageCreated/messages/event"
+  receivePageCreatedSearchsvc:
+    action: receive
+    channel:
+      $ref: "#/channels/PageCreated"
+    summary: search-svc aplica bookstack.page.created con ack explícito e idempotencia.
+    x-service: search-svc
+    x-durable-consumer: search-svc-pages-v1
+    x-ack-policy: explicit
+    messages:
+      - $ref: "#/channels/PageCreated/messages/event"
+  receivePageCreatedAuditsvc:
+    action: receive
+    channel:
+      $ref: "#/channels/PageCreated"
+    summary: audit-svc aplica bookstack.page.created con ack explícito e idempotencia.
+    x-service: audit-svc
+    x-durable-consumer: audit-svc-pages-v1
+    x-ack-policy: explicit
+    messages:
+      - $ref: "#/channels/PageCreated/messages/event"
+  sendPageUpdated:
+    action: send
+    channel:
+      $ref: "#/channels/PageUpdated"
+    summary: event-bridge publica bookstack.page.updated.
+    x-service: event-bridge
+    messages:
+      - $ref: "#/channels/PageUpdated/messages/event"
+  receivePageUpdatedSearchsvc:
+    action: receive
+    channel:
+      $ref: "#/channels/PageUpdated"
+    summary: search-svc aplica bookstack.page.updated con ack explícito e idempotencia.
+    x-service: search-svc
+    x-durable-consumer: search-svc-pages-v1
+    x-ack-policy: explicit
+    messages:
+      - $ref: "#/channels/PageUpdated/messages/event"
+  receivePageUpdatedAuditsvc:
+    action: receive
+    channel:
+      $ref: "#/channels/PageUpdated"
+    summary: audit-svc aplica bookstack.page.updated con ack explícito e idempotencia.
+    x-service: audit-svc
+    x-durable-consumer: audit-svc-pages-v1
+    x-ack-policy: explicit
+    messages:
+      - $ref: "#/channels/PageUpdated/messages/event"
+  sendPageDeleted:
+    action: send
+    channel:
+      $ref: "#/channels/PageDeleted"
+    summary: event-bridge publica bookstack.page.deleted.
+    x-service: event-bridge
+    messages:
+      - $ref: "#/channels/PageDeleted/messages/event"
+  receivePageDeletedSearchsvc:
+    action: receive
+    channel:
+      $ref: "#/channels/PageDeleted"
+    summary: search-svc aplica bookstack.page.deleted con ack explícito e idempotencia.
+    x-service: search-svc
+    x-durable-consumer: search-svc-pages-v1
+    x-ack-policy: explicit
+    messages:
+      - $ref: "#/channels/PageDeleted/messages/event"
+  receivePageDeletedAuditsvc:
+    action: receive
+    channel:
+      $ref: "#/channels/PageDeleted"
+    summary: audit-svc aplica bookstack.page.deleted con ack explícito e idempotencia.
+    x-service: audit-svc
+    x-durable-consumer: audit-svc-pages-v1
+    x-ack-policy: explicit
+    messages:
+      - $ref: "#/channels/PageDeleted/messages/event"
+  sendExportRequested:
+    action: send
+    channel:
+      $ref: "#/channels/ExportRequested"
+    summary: export-svc publica export.requested.
+    x-service: export-svc
+    messages:
+      - $ref: "#/channels/ExportRequested/messages/event"
+  sendExportCompleted:
+    action: send
+    channel:
+      $ref: "#/channels/ExportCompleted"
+    summary: export-svc publica export.completed.
+    x-service: export-svc
+    messages:
+      - $ref: "#/channels/ExportCompleted/messages/event"
+  sendMediaUploaded:
+    action: send
+    channel:
+      $ref: "#/channels/MediaUploaded"
+    summary: media-svc publica media.uploaded.
+    x-service: media-svc
+    messages:
+      - $ref: "#/channels/MediaUploaded/messages/event"
+  receiveExportRequested:
+    action: receive
+    channel:
+      $ref: "#/channels/ExportRequested"
+    summary: Auditoría registra la solicitud de exportación.
+    x-service: audit-svc
+    messages:
+      - $ref: "#/channels/ExportRequested/messages/event"
+  receiveExportCompleted:
+    action: receive
+    channel:
+      $ref: "#/channels/ExportCompleted"
+    summary: Auditoría registra la exportación completada.
+    x-service: audit-svc
+    messages:
+      - $ref: "#/channels/ExportCompleted/messages/event"
+  receiveMediaUploaded:
+    action: receive
+    channel:
+      $ref: "#/channels/MediaUploaded"
+    summary: Auditoría registra la imagen subida.
+    x-service: audit-svc
+    messages:
+      - $ref: "#/channels/MediaUploaded/messages/event"
+components:
+  schemas:
+    EventEnvelope:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          minLength: 1
+        version:
+          type: string
+          enum:
+            - "1.0"
+        occurred_at:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: ^[A-Za-z0-9._-]+$
+        payload:
+          type: object
+        traceparent:
+          type: string
+          pattern: ^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$
+      required:
+        - event_id
+        - type
+        - version
+        - occurred_at
+        - request_id
+        - payload
+      additionalProperties: false
+    Actor:
+      type: object
+      properties:
+        id:
+          minimum: 0
+          anyOf:
+            - type: integer
+            - type: "null"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 191
+      required:
+        - id
+        - name
+      additionalProperties: false
+    PagePayload:
+      type: object
+      properties:
+        page_id:
+          type: integer
+          minimum: 1
+        book_id:
+          type: integer
+          minimum: 1
+        actor:
+          $ref: "#/components/schemas/Actor"
+        source_revision:
+          type: integer
+          minimum: 1
+      required:
+        - page_id
+        - actor
+      additionalProperties: false
+    ExportRequestedPayload:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        source:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - page
+                - book
+            id:
+              type: integer
+              minimum: 1
+          required:
+            - type
+            - id
+          additionalProperties: false
+        format:
+          type: string
+          enum:
+            - pdf
+            - markdown
+        actor:
+          $ref: "#/components/schemas/Actor"
+      required:
+        - job_id
+        - source
+        - format
+        - actor
+      additionalProperties: false
+    ExportCompletedPayload:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        format:
+          type: string
+          enum:
+            - pdf
+            - markdown
+        object_key:
+          type: string
+          minLength: 1
+        size_bytes:
+          type: integer
+          minimum: 1
+        actor:
+          $ref: "#/components/schemas/Actor"
+      required:
+        - job_id
+        - format
+        - object_key
+        - size_bytes
+        - actor
+      additionalProperties: false
+    MediaUploadedPayload:
+      type: object
+      properties:
+        media_id:
+          type: string
+          format: uuid
+        object_key:
+          type: string
+          minLength: 1
+        thumbnail_key:
+          type: string
+          minLength: 1
+        content_type:
+          type: string
+          enum:
+            - image/png
+            - image/jpeg
+            - image/webp
+        size_bytes:
+          type: integer
+          minimum: 1
+        actor:
+          $ref: "#/components/schemas/Actor"
+        page_id:
+          type: integer
+          minimum: 1
+      required:
+        - media_id
+        - object_key
+        - thumbnail_key
+        - content_type
+        - size_bytes
+        - actor
+      additionalProperties: false
+    PageCreatedEvent:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: bookstack.page.created
+            payload:
+              $ref: "#/components/schemas/PagePayload"
+    PageUpdatedEvent:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: bookstack.page.updated
+            payload:
+              $ref: "#/components/schemas/PagePayload"
+    PageDeletedEvent:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: bookstack.page.deleted
+            payload:
+              $ref: "#/components/schemas/PagePayload"
+    ExportRequestedEvent:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: export.requested
+            payload:
+              $ref: "#/components/schemas/ExportRequestedPayload"
+    ExportCompletedEvent:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: export.completed
+            payload:
+              $ref: "#/components/schemas/ExportCompletedPayload"
+    MediaUploadedEvent:
+      allOf:
+        - $ref: "#/components/schemas/EventEnvelope"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: media.uploaded
+            payload:
+              $ref: "#/components/schemas/MediaUploadedPayload"
+  messages:
+    PageCreated:
+      name: PageCreated
+      title: bookstack.page.created
+      summary: Evento bookstack.page.created versión 1.0.
+      contentType: application/json
+      correlationId:
+        description: Identificador de la operación HTTP o de la entrada al puente.
+        location: $message.payload#/request_id
+      payload:
+        $ref: "#/components/schemas/PageCreatedEvent"
+      examples:
+        - name: example
+          summary: Evento ilustrativo sin credenciales.
+          payload:
+            event_id: f2e691d1-e873-49ab-a974-ecf7e31e20e9
+            type: bookstack.page.created
+            version: "1.0"
+            occurred_at: 2026-11-11T14:00:00Z
+            request_id: 9c7059e1b4954ed8934ba05643761378
+            payload:
+              page_id: 42
+              book_id: 7
+              actor:
+                id: 3
+                name: Usuario de laboratorio
+              source_revision: 1
+    PageUpdated:
+      name: PageUpdated
+      title: bookstack.page.updated
+      summary: Evento bookstack.page.updated versión 1.0.
+      contentType: application/json
+      correlationId:
+        description: Identificador de la operación HTTP o de la entrada al puente.
+        location: $message.payload#/request_id
+      payload:
+        $ref: "#/components/schemas/PageUpdatedEvent"
+      examples:
+        - name: example
+          summary: Evento ilustrativo sin credenciales.
+          payload:
+            event_id: 4e07d48d-e610-4b7f-9d2c-a10e960ec8b7
+            type: bookstack.page.updated
+            version: "1.0"
+            occurred_at: 2026-11-11T14:00:00Z
+            request_id: 9c7059e1b4954ed8934ba05643761378
+            payload:
+              page_id: 42
+              book_id: 7
+              actor:
+                id: 3
+                name: Usuario de laboratorio
+              source_revision: 2
+    PageDeleted:
+      name: PageDeleted
+      title: bookstack.page.deleted
+      summary: Evento bookstack.page.deleted versión 1.0.
+      contentType: application/json
+      correlationId:
+        description: Identificador de la operación HTTP o de la entrada al puente.
+        location: $message.payload#/request_id
+      payload:
+        $ref: "#/components/schemas/PageDeletedEvent"
+      examples:
+        - name: example
+          summary: Evento ilustrativo sin credenciales.
+          payload:
+            event_id: 16010016-1336-41fd-a93f-ddc2f24a2bf0
+            type: bookstack.page.deleted
+            version: "1.0"
+            occurred_at: 2026-11-11T14:00:00Z
+            request_id: 9c7059e1b4954ed8934ba05643761378
+            payload:
+              page_id: 42
+              actor:
+                id: 3
+                name: Usuario de laboratorio
+    ExportRequested:
+      name: ExportRequested
+      title: export.requested
+      summary: Evento export.requested versión 1.0.
+      contentType: application/json
+      correlationId:
+        description: Identificador de la operación HTTP o de la entrada al puente.
+        location: $message.payload#/request_id
+      payload:
+        $ref: "#/components/schemas/ExportRequestedEvent"
+      examples:
+        - name: example
+          summary: Evento ilustrativo sin credenciales.
+          payload:
+            event_id: 0fdd71f9-5921-405d-abba-083e7db54f43
+            type: export.requested
+            version: "1.0"
+            occurred_at: 2026-11-11T14:00:00Z
+            request_id: 9c7059e1b4954ed8934ba05643761378
+            payload:
+              job_id: b31f4453-50d2-4376-8e73-9420c1fc055a
+              source:
+                type: page
+                id: 42
+              format: pdf
+              actor:
+                id: 3
+                name: Usuario de laboratorio
+    ExportCompleted:
+      name: ExportCompleted
+      title: export.completed
+      summary: Evento export.completed versión 1.0.
+      contentType: application/json
+      correlationId:
+        description: Identificador de la operación HTTP o de la entrada al puente.
+        location: $message.payload#/request_id
+      payload:
+        $ref: "#/components/schemas/ExportCompletedEvent"
+      examples:
+        - name: example
+          summary: Evento ilustrativo sin credenciales.
+          payload:
+            event_id: 7b92e154-b183-49b7-a4fe-d9d86c8662f0
+            type: export.completed
+            version: "1.0"
+            occurred_at: 2026-11-11T14:00:00Z
+            request_id: 9c7059e1b4954ed8934ba05643761378
+            payload:
+              job_id: b31f4453-50d2-4376-8e73-9420c1fc055a
+              format: pdf
+              object_key: exports/b31f4453-50d2-4376-8e73-9420c1fc055a.pdf
+              size_bytes: 2048
+              actor:
+                id: 3
+                name: Usuario de laboratorio
+    MediaUploaded:
+      name: MediaUploaded
+      title: media.uploaded
+      summary: Evento media.uploaded versión 1.0.
+      contentType: application/json
+      correlationId:
+        description: Identificador de la operación HTTP o de la entrada al puente.
+        location: $message.payload#/request_id
+      payload:
+        $ref: "#/components/schemas/MediaUploadedEvent"
+      examples:
+        - name: example
+          summary: Evento ilustrativo sin credenciales.
+          payload:
+            event_id: b6da01fe-6433-49b6-aa26-dd225d805b1f
+            type: media.uploaded
+            version: "1.0"
+            occurred_at: 2026-11-11T14:00:00Z
+            request_id: 9c7059e1b4954ed8934ba05643761378
+            payload:
+              media_id: c2954672-f585-485b-9c2d-429d038ec849
+              object_key: media/c2954672-f585-485b-9c2d-429d038ec849/original.png
+              thumbnail_key: media/c2954672-f585-485b-9c2d-429d038ec849/thumbnail.png
+              content_type: image/png
+              size_bytes: 8192
+              actor:
+                id: 3
+                name: Usuario de laboratorio
+              page_id: 42
+  securitySchemes:
+    BrokerCredentials:
+      type: userPassword
+      description: Credenciales por servicio mediante secretos.

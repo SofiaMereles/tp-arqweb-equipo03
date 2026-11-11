@@ -1,0 +1,869 @@
+openapi: 3.1.0
+info:
+  title: export-svc — BookStack CNA
+  version: 1.0.0
+  description: Exportación asíncrona de páginas y libros a PDF o Markdown mediante API y workers separados.
+  contact:
+    name: Equipo 03 — Arquitectura Web FP-UNA
+  license:
+    name: Uso académico — TP Integrador II
+servers:
+  - url: https://api.bookstack.local
+    description: Gateway único TLS del laboratorio.
+tags:
+  - name: export-svc
+    description: Exportación asíncrona de páginas y libros a PDF o Markdown mediante API y workers separados.
+  - name: operations
+    description: Sondas y métricas en la red interna.
+security:
+  - ServiceApiKey: []
+paths:
+  /healthz:
+    get:
+      operationId: export_svc_health
+      summary: Comprobar vida
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar vida
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              examples:
+                example:
+                  summary: Comprobar vida
+                  value:
+                    status: ok
+                    service: export-svc
+      security: []
+      servers:
+        - url: http://export-svc:8000
+          description: Red interna de servicios.
+  /readyz:
+    get:
+      operationId: export_svc_ready
+      summary: Comprobar disponibilidad
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar disponibilidad
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ready"
+              examples:
+                example:
+                  summary: Comprobar disponibilidad
+                  value:
+                    status: ready
+                    service: export-svc
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://export-svc:8000
+          description: Red interna de servicios.
+  /metrics:
+    get:
+      operationId: export_svc_metrics
+      summary: Consultar métricas Prometheus
+      description: Métricas internas de solicitudes por código e histograma de duración. La instrumentación
+        incorporará las series necesarias para p50/p95/p99.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Exposición Prometheus.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                example:
+                  summary: Exposición Prometheus.
+                  value: |
+                    http_requests_total{code="200"} 1
+                    http_request_duration_seconds_bucket{le="0.1"} 1
+                    http_request_duration_seconds_bucket{le="+Inf"} 1
+                    http_request_duration_seconds_sum 0.05
+                    http_request_duration_seconds_count 1
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://export-svc:8000
+          description: Red interna de servicios.
+  /v2/exports:
+    post:
+      operationId: createExport
+      summary: Solicitar una exportación
+      description: "Acepta exactamente page_id o book_id. Guarda estado, cola y evento export.requested de
+        forma recuperable antes de responder. Un worker recupera el archivo mediante la API autorizada de
+        BookStack y lo guarda en MinIO. Idempotency-Key identifica la misma solicitud durante al menos 24
+        horas: mismo cuerpo devuelve el mismo job; otro cuerpo con esa clave devuelve 409. Una referencia
+        de contenido inválida detectada antes de aceptar devuelve 404; si se descubre en el worker, el
+        job termina failed. El evento se publica con patrón outbox recuperable."
+      tags:
+        - export-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Clave estable de la solicitud de exportación.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+            pattern: ^[A-Za-z0-9._-]+$
+          example: export-page42-pdf-001
+      responses:
+        "202":
+          description: Trabajo aceptado o reconocido por idempotencia. Location permite consultar su estado actual.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+            Location:
+              description: URL para consultar el estado.
+              schema:
+                type: string
+                format: uri
+              example: https://api.bookstack.local/v2/exports/b31f4453-50d2-4376-8e73-9420c1fc055a
+            Retry-After:
+              description: Segundos sugeridos antes de consultar.
+              schema:
+                type: integer
+                minimum: 1
+              example: 2
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportJob"
+              examples:
+                example:
+                  summary: Trabajo guardado de forma durable y encolado; aún no está terminado.
+                  value:
+                    job_id: b31f4453-50d2-4376-8e73-9420c1fc055a
+                    state: queued
+                    created_at: 2026-11-11T14:00:00Z
+                    updated_at: 2026-11-11T14:00:00Z
+                    status_url: https://api.bookstack.local/v2/exports/b31f4453-50d2-4376-8e73-9420c1fc055a
+                    format: pdf
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "404":
+          description: Recurso inexistente o no visible para esta credencial.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Recurso inexistente o no visible para esta credencial.
+                  value:
+                    error:
+                      code: not_found
+                      message: Recurso inexistente o no visible para esta credencial.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "409":
+          description: La misma clave de idempotencia se usó con otro contenido.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La misma clave de idempotencia se usó con otro contenido.
+                  value:
+                    error:
+                      code: idempotency_conflict
+                      message: La misma clave de idempotencia se usó con otro contenido.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      requestBody:
+        required: true
+        description: Contenido validado antes de aceptar la operación.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportRequest"
+            examples:
+              example:
+                value:
+                  page_id: 42
+                  format: pdf
+  /v2/exports/{job_id}:
+    get:
+      operationId: getExport
+      summary: Consultar estado y resultado
+      description: Un trabajo conocido devuelve 200 en los cuatro estados, incluso failed. done devuelve una
+        URL prefirmada temporal accesible por el gateway. Una nueva consulta puede renovar la URL vencida
+        mientras exista el objeto. La transición permitida es queued → running → done/failed; un worker
+        perdido recupera su reserva y reintenta hasta el límite configurado.
+      tags:
+        - export-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: job_id
+          in: path
+          required: true
+          description: UUID del trabajo.
+          schema:
+            type: string
+            format: uuid
+          example: b31f4453-50d2-4376-8e73-9420c1fc055a
+      responses:
+        "200":
+          description: Estado actual del trabajo. El archivo solo se incluye en done.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportJob"
+              examples:
+                queued:
+                  summary: queued
+                  value:
+                    job_id: b31f4453-50d2-4376-8e73-9420c1fc055a
+                    state: queued
+                    created_at: 2026-11-11T14:00:00Z
+                    updated_at: 2026-11-11T14:00:00Z
+                    status_url: https://api.bookstack.local/v2/exports/b31f4453-50d2-4376-8e73-9420c1fc055a
+                    format: pdf
+                running:
+                  summary: running
+                  value:
+                    job_id: b31f4453-50d2-4376-8e73-9420c1fc055a
+                    state: running
+                    created_at: 2026-11-11T14:00:00Z
+                    updated_at: 2026-11-11T14:00:00Z
+                    status_url: https://api.bookstack.local/v2/exports/b31f4453-50d2-4376-8e73-9420c1fc055a
+                    format: pdf
+                done:
+                  summary: done
+                  value:
+                    job_id: b31f4453-50d2-4376-8e73-9420c1fc055a
+                    state: done
+                    created_at: 2026-11-11T14:00:00Z
+                    updated_at: 2026-11-11T14:00:03Z
+                    status_url: https://api.bookstack.local/v2/exports/b31f4453-50d2-4376-8e73-9420c1fc055a
+                    format: pdf
+                    file:
+                      url: https://api.bookstack.local/objects/exports/b31f4453-50d2-4376-8e73-9420c1fc055a.pdf?signature=example
+                      expires_at: 2026-11-11T14:10:03Z
+                      content_type: application/pdf
+                      size_bytes: 2048
+                failed:
+                  summary: failed
+                  value:
+                    job_id: b31f4453-50d2-4376-8e73-9420c1fc055a
+                    state: failed
+                    created_at: 2026-11-11T14:00:00Z
+                    updated_at: 2026-11-11T14:00:00Z
+                    status_url: https://api.bookstack.local/v2/exports/b31f4453-50d2-4376-8e73-9420c1fc055a
+                    format: pdf
+                    failure:
+                      code: source_unavailable
+                      message: No fue posible obtener el contenido.
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "404":
+          description: Recurso inexistente o no visible para esta credencial.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Recurso inexistente o no visible para esta credencial.
+                  value:
+                    error:
+                      code: not_found
+                      message: Recurso inexistente o no visible para esta credencial.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+components:
+  securitySchemes:
+    ServiceApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Credencial de consumidor autorizada para este servicio. Se configura como secreto y no es el
+        token de la API de BookStack.
+  schemas:
+    RequestId:
+      type: string
+      minLength: 1
+      maxLength: 128
+      pattern: ^[A-Za-z0-9._-]+$
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              minLength: 1
+            message:
+              type: string
+              minLength: 1
+            request_id:
+              $ref: "#/components/schemas/RequestId"
+          required:
+            - code
+            - message
+            - request_id
+          additionalProperties: false
+      required:
+        - error
+      additionalProperties: false
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    Ready:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    ExportRequest:
+      type: object
+      properties:
+        page_id:
+          type: integer
+          minimum: 1
+        book_id:
+          type: integer
+          minimum: 1
+        format:
+          type: string
+          enum:
+            - pdf
+            - markdown
+      required:
+        - format
+      additionalProperties: false
+      oneOf:
+        - required:
+            - page_id
+          not:
+            required:
+              - book_id
+        - required:
+            - book_id
+          not:
+            required:
+              - page_id
+    ExportFile:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          pattern: ^https://api\.bookstack\.local/
+        expires_at:
+          type: string
+          format: date-time
+        content_type:
+          type: string
+          enum:
+            - application/pdf
+            - text/markdown
+        size_bytes:
+          type: integer
+          minimum: 1
+      required:
+        - url
+        - expires_at
+        - content_type
+        - size_bytes
+      additionalProperties: false
+    JobQueued:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        state:
+          type: string
+          const: queued
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        status_url:
+          type: string
+          format: uri
+        format:
+          type: string
+          enum:
+            - pdf
+            - markdown
+      required:
+        - job_id
+        - state
+        - created_at
+        - updated_at
+        - status_url
+        - format
+      additionalProperties: false
+    JobRunning:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        state:
+          type: string
+          const: running
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        status_url:
+          type: string
+          format: uri
+        format:
+          type: string
+          enum:
+            - pdf
+            - markdown
+      required:
+        - job_id
+        - state
+        - created_at
+        - updated_at
+        - status_url
+        - format
+      additionalProperties: false
+    JobDone:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        state:
+          type: string
+          const: done
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        status_url:
+          type: string
+          format: uri
+        format:
+          type: string
+          enum:
+            - pdf
+            - markdown
+        file:
+          $ref: "#/components/schemas/ExportFile"
+      required:
+        - job_id
+        - state
+        - created_at
+        - updated_at
+        - status_url
+        - format
+        - file
+      additionalProperties: false
+    JobFailed:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        state:
+          type: string
+          const: failed
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        status_url:
+          type: string
+          format: uri
+        format:
+          type: string
+          enum:
+            - pdf
+            - markdown
+        failure:
+          type: object
+          properties:
+            code:
+              type: string
+              minLength: 1
+            message:
+              type: string
+              minLength: 1
+          required:
+            - code
+            - message
+          additionalProperties: false
+      required:
+        - job_id
+        - state
+        - created_at
+        - updated_at
+        - status_url
+        - format
+        - failure
+      additionalProperties: false
+    ExportJob:
+      oneOf:
+        - $ref: "#/components/schemas/JobQueued"
+        - $ref: "#/components/schemas/JobRunning"
+        - $ref: "#/components/schemas/JobDone"
+        - $ref: "#/components/schemas/JobFailed"

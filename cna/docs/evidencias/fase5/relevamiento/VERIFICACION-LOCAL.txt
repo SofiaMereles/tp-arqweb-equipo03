@@ -1,0 +1,8 @@
+Paquete original verificado contra sus 5 sumas SHA256SUMS.
+codigo-app.tar.gz permanece dentro del paquete original; codigo-verificado.txt contiene los fragmentos analizados.
+2533be5ee13f623b6c81414689d85dc3c6e490dde280c565891ee80b40b49101  claves.tsv
+93eec8b489344e91034c81a276dc05c94e57df0912e84ee43261dcd1902eb01b  codigo-verificado.txt
+1bd4b5b8a8f87710c0c14dfd06d7646198ee8e82d2ad1dff0948fd7391c53838  columnas.tsv
+bf848560d9bf0f2b20269bd87c9bbde6bbe41f6dba895d82ac3a6c567311e2ad  origen.txt
+14113d4ab8941945c883b2a3b320a282ad9f131c6ac9f1fc903c1bdac35d75ad  SHA256SUMS
+7c9b988d5ab875c11cca9d14ba4cc82e908d556a9d65b7916dac8b1f5ae57783  tablas.tsv

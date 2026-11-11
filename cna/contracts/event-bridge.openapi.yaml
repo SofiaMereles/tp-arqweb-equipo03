@@ -1,0 +1,474 @@
+openapi: 3.1.0
+info:
+  title: event-bridge — BookStack CNA
+  version: 1.0.0
+  description: Adaptación de Webhooks de BookStack a eventos versionados. Servicio interno de plataforma.
+  contact:
+    name: Equipo 03 — Arquitectura Web FP-UNA
+  license:
+    name: Uso académico — TP Integrador II
+servers:
+  - url: http://event-bridge:8000
+    description: Red privada; sin ruta pública en el gateway.
+tags:
+  - name: event-bridge
+    description: Adaptación de Webhooks de BookStack a eventos versionados. Servicio interno de plataforma.
+  - name: operations
+    description: Sondas y métricas en la red interna.
+security:
+  - WebhookToken: []
+paths:
+  /healthz:
+    get:
+      operationId: event_bridge_health
+      summary: Comprobar vida
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar vida
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              examples:
+                example:
+                  summary: Comprobar vida
+                  value:
+                    status: ok
+                    service: event-bridge
+      security: []
+      servers:
+        - url: http://event-bridge:8000
+          description: Red interna de servicios.
+  /readyz:
+    get:
+      operationId: event_bridge_ready
+      summary: Comprobar disponibilidad
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar disponibilidad
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ready"
+              examples:
+                example:
+                  summary: Comprobar disponibilidad
+                  value:
+                    status: ready
+                    service: event-bridge
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://event-bridge:8000
+          description: Red interna de servicios.
+  /metrics:
+    get:
+      operationId: event_bridge_metrics
+      summary: Consultar métricas Prometheus
+      description: Métricas internas de solicitudes por código e histograma de duración. La instrumentación
+        incorporará las series necesarias para p50/p95/p99.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Exposición Prometheus.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                example:
+                  summary: Exposición Prometheus.
+                  value: |
+                    http_requests_total{code="200"} 1
+                    http_request_duration_seconds_bucket{le="0.1"} 1
+                    http_request_duration_seconds_bucket{le="+Inf"} 1
+                    http_request_duration_seconds_sum 0.05
+                    http_request_duration_seconds_count 1
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://event-bridge:8000
+          description: Red interna de servicios.
+  /internal/webhooks/bookstack:
+    post:
+      operationId: acceptBookStackWebhook
+      summary: Guardar y normalizar un Webhook de página
+      description: Valida token y cuerpo antes de persistir inbox y outbox en la misma transacción. 202 solo
+        confirma aceptación durable, no indexación terminada. 200 devuelve el event_id original para un
+        payload repetido. La clave de deduplicación es SHA-256 del JSON canónico del cuerpo original por
+        webhook_id, conservada al menos 7 días. El publicador confirma JetStream antes de marcar outbox
+        como enviado. Si falta X-Request-ID, el puente genera uno. El código instalado de BookStack no
+        transmite por sí solo el request_id de la edición en este Webhook; correlacionar el tramo previo
+        exige instrumentación adicional y se verificará antes de las pruebas de trazas. La ausencia de
+        almacén durable devuelve 503.
+      tags:
+        - event-bridge
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Webhook repetido; conserva su evento original.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookReceipt"
+              examples:
+                example:
+                  summary: Webhook repetido; conserva su evento original.
+                  value:
+                    event_id: 4e07d48d-e610-4b7f-9d2c-a10e960ec8b7
+                    state: duplicate
+                    request_id: 9c7059e1b4954ed8934ba05643761378
+        "202":
+          description: Evento guardado y pendiente de publicación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookReceipt"
+              examples:
+                example:
+                  summary: Evento guardado y pendiente de publicación.
+                  value:
+                    event_id: 4e07d48d-e610-4b7f-9d2c-a10e960ec8b7
+                    state: accepted
+                    request_id: 9c7059e1b4954ed8934ba05643761378
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      requestBody:
+        required: true
+        description: Contenido validado antes de aceptar la operación.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookStackWebhook"
+            examples:
+              example:
+                value:
+                  event: page_update
+                  triggered_at: 2026-11-11T14:00:00Z
+                  triggered_by:
+                    id: 3
+                    name: Usuario de laboratorio
+                  webhook_id: 1
+                  related_item:
+                    id: 42
+                    book_id: 7
+                    name: Nginx
+                    updated_at: 2026-11-11T14:00:00Z
+components:
+  securitySchemes:
+    WebhookToken:
+      type: apiKey
+      in: query
+      name: token
+      description: Token compartido configurado como secreto en BookStack y el puente. Redactar query en logs.
+  schemas:
+    RequestId:
+      type: string
+      minLength: 1
+      maxLength: 128
+      pattern: ^[A-Za-z0-9._-]+$
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              minLength: 1
+            message:
+              type: string
+              minLength: 1
+            request_id:
+              $ref: "#/components/schemas/RequestId"
+          required:
+            - code
+            - message
+            - request_id
+          additionalProperties: false
+      required:
+        - error
+      additionalProperties: false
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    Ready:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    BookStackWebhook:
+      type: object
+      required:
+        - event
+        - triggered_at
+        - triggered_by
+        - webhook_id
+        - related_item
+      properties:
+        event:
+          type: string
+          enum:
+            - page_create
+            - page_update
+            - page_delete
+        triggered_at:
+          type: string
+          format: date-time
+        triggered_by:
+          type: object
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: integer
+              minimum: 0
+            name:
+              type: string
+              minLength: 1
+          additionalProperties: true
+        webhook_id:
+          type: integer
+          minimum: 1
+        webhook_name:
+          type: string
+        text:
+          type: string
+        url:
+          type: string
+          format: uri
+        triggered_by_profile_url:
+          type: string
+          format: uri
+        related_item:
+          type: object
+          required:
+            - id
+          properties:
+            id:
+              type: integer
+              minimum: 1
+            book_id:
+              type: integer
+              minimum: 1
+            name:
+              type: string
+            updated_at:
+              type: string
+              format: date-time
+            current_revision:
+              type:
+                - object
+                - "null"
+              additionalProperties: true
+          additionalProperties: true
+      additionalProperties: true
+    WebhookReceipt:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum:
+            - accepted
+            - duplicate
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+      required:
+        - event_id
+        - state
+        - request_id
+      additionalProperties: false

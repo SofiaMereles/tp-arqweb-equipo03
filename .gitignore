@@ -5,3 +5,23 @@
 *.pcap
 .DS_Store
 Thumbs.db
+
+# Dependencias y archivos temporales locales
+node_modules/
+/tmp/
+.env.*
+!.env.example
+
+# Archivos auxiliares de LaTeX (se conserva el PDF final)
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Paquete original de relevamiento; se versionan los resultados seleccionados
+/cna/docs/evidencias/fase5/a1-relevamiento.*.tar.gz

@@ -1,0 +1,281 @@
+TABLE_NAME	ORDINAL_POSITION	COLUMN_NAME	COLUMN_TYPE	IS_NULLABLE	COLUMN_KEY
+activities	1	id	int(10) unsigned	NO	PRI
+activities	2	type	varchar(191)	NO	MUL
+activities	3	detail	text	NO	
+activities	4	user_id	int(11)	NO	MUL
+activities	5	ip	varchar(45)	NO	MUL
+activities	6	loggable_id	bigint(20) unsigned	YES	MUL
+activities	7	loggable_type	varchar(191)	YES	
+activities	8	created_at	timestamp	YES	MUL
+activities	9	updated_at	timestamp	YES	
+api_tokens	1	id	int(10) unsigned	NO	PRI
+api_tokens	2	name	varchar(191)	NO	
+api_tokens	3	token_id	varchar(191)	NO	UNI
+api_tokens	4	secret	varchar(191)	NO	
+api_tokens	5	user_id	int(10) unsigned	NO	MUL
+api_tokens	6	expires_at	date	NO	MUL
+api_tokens	7	created_at	timestamp	YES	
+api_tokens	8	updated_at	timestamp	YES	
+attachments	1	id	int(10) unsigned	NO	PRI
+attachments	2	name	varchar(191)	NO	
+attachments	3	path	text	NO	
+attachments	4	extension	varchar(20)	NO	
+attachments	5	uploaded_to	bigint(20) unsigned	NO	MUL
+attachments	6	external	tinyint(1)	NO	
+attachments	7	order	int(11)	NO	
+attachments	8	created_by	int(10) unsigned	YES	
+attachments	9	updated_by	int(10) unsigned	YES	
+attachments	10	created_at	timestamp	YES	
+attachments	11	updated_at	timestamp	YES	
+bookshelves_books	1	bookshelf_id	bigint(20) unsigned	NO	PRI
+bookshelves_books	2	book_id	bigint(20) unsigned	NO	PRI
+bookshelves_books	3	order	int(10) unsigned	NO	
+cache	1	key	varchar(191)	NO	PRI
+cache	2	value	mediumtext	NO	
+cache	3	expiration	int(11)	NO	
+comments	1	id	int(10) unsigned	NO	PRI
+comments	2	commentable_id	bigint(20) unsigned	NO	MUL
+comments	3	commentable_type	varchar(191)	NO	
+comments	4	html	longtext	YES	
+comments	5	parent_id	int(10) unsigned	YES	
+comments	6	local_id	int(10) unsigned	YES	MUL
+comments	7	created_by	int(10) unsigned	YES	
+comments	8	updated_by	int(10) unsigned	YES	
+comments	9	created_at	timestamp	YES	
+comments	10	updated_at	timestamp	YES	
+comments	11	content_ref	varchar(191)	NO	
+comments	12	archived	tinyint(1)	NO	MUL
+deletions	1	id	int(10) unsigned	NO	PRI
+deletions	2	deleted_by	int(10) unsigned	YES	MUL
+deletions	3	deletable_type	varchar(100)	NO	MUL
+deletions	4	deletable_id	bigint(20) unsigned	NO	MUL
+deletions	5	created_at	timestamp	YES	
+deletions	6	updated_at	timestamp	YES	
+email_confirmations	1	id	int(10) unsigned	NO	PRI
+email_confirmations	2	user_id	int(11)	NO	MUL
+email_confirmations	3	token	varchar(191)	NO	MUL
+email_confirmations	4	created_at	timestamp	YES	
+email_confirmations	5	updated_at	timestamp	YES	
+entities	1	id	bigint(20) unsigned	NO	PRI
+entities	2	type	varchar(10)	NO	PRI
+entities	3	name	varchar(191)	NO	
+entities	4	slug	varchar(191)	NO	MUL
+entities	5	book_id	bigint(20) unsigned	YES	MUL
+entities	6	chapter_id	bigint(20) unsigned	YES	MUL
+entities	7	priority	int(10) unsigned	YES	
+entities	8	created_at	timestamp	YES	
+entities	9	updated_at	timestamp	YES	MUL
+entities	10	deleted_at	timestamp	YES	MUL
+entities	11	created_by	int(10) unsigned	YES	
+entities	12	updated_by	int(10) unsigned	YES	
+entities	13	owned_by	int(10) unsigned	YES	MUL
+entity_container_data	1	entity_id	bigint(20) unsigned	NO	PRI
+entity_container_data	2	entity_type	varchar(10)	NO	PRI
+entity_container_data	3	description	text	NO	
+entity_container_data	4	description_html	text	NO	
+entity_container_data	5	default_template_id	bigint(20) unsigned	YES	
+entity_container_data	6	image_id	int(10) unsigned	YES	
+entity_container_data	7	sort_rule_id	int(10) unsigned	YES	
+entity_page_data	1	page_id	bigint(20) unsigned	NO	PRI
+entity_page_data	2	draft	tinyint(1)	NO	MUL
+entity_page_data	3	template	tinyint(1)	NO	MUL
+entity_page_data	4	revision_count	int(10) unsigned	NO	
+entity_page_data	5	editor	varchar(50)	NO	
+entity_page_data	6	html	longtext	NO	
+entity_page_data	7	text	longtext	NO	
+entity_page_data	8	markdown	longtext	NO	
+entity_permissions	1	id	bigint(20) unsigned	NO	PRI
+entity_permissions	2	entity_id	bigint(20) unsigned	NO	MUL
+entity_permissions	3	entity_type	varchar(25)	NO	
+entity_permissions	4	role_id	int(10) unsigned	NO	MUL
+entity_permissions	5	view	tinyint(1)	NO	
+entity_permissions	6	create	tinyint(1)	NO	
+entity_permissions	7	update	tinyint(1)	NO	
+entity_permissions	8	delete	tinyint(1)	NO	
+failed_jobs	1	id	bigint(20) unsigned	NO	PRI
+failed_jobs	2	uuid	varchar(191)	NO	UNI
+failed_jobs	3	connection	text	NO	
+failed_jobs	4	queue	text	NO	
+failed_jobs	5	payload	longtext	NO	
+failed_jobs	6	exception	longtext	NO	
+failed_jobs	7	failed_at	timestamp	NO	
+favourites	1	id	int(10) unsigned	NO	PRI
+favourites	2	user_id	int(11)	NO	MUL
+favourites	3	favouritable_id	bigint(20) unsigned	NO	MUL
+favourites	4	favouritable_type	varchar(100)	NO	
+favourites	5	created_at	timestamp	YES	
+favourites	6	updated_at	timestamp	YES	
+images	1	id	int(10) unsigned	NO	PRI
+images	2	name	varchar(191)	NO	
+images	3	url	varchar(191)	NO	
+images	4	created_at	timestamp	YES	
+images	5	updated_at	timestamp	YES	
+images	6	created_by	int(10) unsigned	YES	
+images	7	updated_by	int(10) unsigned	YES	
+images	8	path	varchar(400)	NO	
+images	9	type	varchar(191)	NO	MUL
+images	10	uploaded_to	bigint(20) unsigned	YES	MUL
+imports	1	id	int(10) unsigned	NO	PRI
+imports	2	name	varchar(191)	NO	
+imports	3	path	varchar(191)	NO	
+imports	4	size	int(11)	NO	
+imports	5	type	varchar(191)	NO	
+imports	6	metadata	longtext	NO	
+imports	7	created_by	int(10) unsigned	YES	MUL
+imports	8	created_at	timestamp	YES	
+imports	9	updated_at	timestamp	YES	
+jobs	1	id	bigint(20) unsigned	NO	PRI
+jobs	2	queue	varchar(191)	NO	MUL
+jobs	3	payload	longtext	NO	
+jobs	4	attempts	tinyint(3) unsigned	NO	
+jobs	5	reserved_at	int(10) unsigned	YES	
+jobs	6	available_at	int(10) unsigned	NO	
+jobs	7	created_at	int(10) unsigned	NO	
+joint_permissions	1	role_id	int(11)	NO	PRI
+joint_permissions	2	entity_type	varchar(191)	NO	PRI
+joint_permissions	3	entity_id	bigint(20) unsigned	NO	PRI
+joint_permissions	4	status	tinyint(3) unsigned	NO	MUL
+joint_permissions	5	owner_id	int(10) unsigned	YES	MUL
+mention_history	1	id	int(10) unsigned	NO	PRI
+mention_history	2	mentionable_type	varchar(50)	NO	MUL
+mention_history	3	mentionable_id	bigint(20) unsigned	NO	MUL
+mention_history	4	from_user_id	int(10) unsigned	NO	
+mention_history	5	to_user_id	int(10) unsigned	NO	
+mention_history	6	created_at	timestamp	YES	
+mention_history	7	updated_at	timestamp	YES	
+mfa_values	1	id	int(10) unsigned	NO	PRI
+mfa_values	2	user_id	int(11)	NO	MUL
+mfa_values	3	method	varchar(20)	NO	MUL
+mfa_values	4	value	text	NO	
+mfa_values	5	created_at	timestamp	YES	
+mfa_values	6	updated_at	timestamp	YES	
+migrations	1	id	int(10) unsigned	NO	PRI
+migrations	2	migration	varchar(191)	NO	
+migrations	3	batch	int(11)	NO	
+page_revisions	1	id	int(10) unsigned	NO	PRI
+page_revisions	2	page_id	bigint(20) unsigned	NO	MUL
+page_revisions	3	name	varchar(191)	NO	
+page_revisions	4	html	longtext	NO	
+page_revisions	5	text	longtext	NO	
+page_revisions	6	created_by	int(10) unsigned	YES	
+page_revisions	7	created_at	timestamp	YES	
+page_revisions	8	updated_at	timestamp	YES	
+page_revisions	9	slug	varchar(191)	NO	MUL
+page_revisions	10	book_slug	varchar(191)	NO	MUL
+page_revisions	11	type	varchar(191)	NO	MUL
+page_revisions	12	markdown	longtext	NO	
+page_revisions	13	summary	varchar(191)	YES	
+page_revisions	14	revision_number	int(11)	NO	MUL
+password_resets	1	email	varchar(191)	NO	MUL
+password_resets	2	token	varchar(191)	NO	MUL
+password_resets	3	created_at	timestamp	NO	
+permission_role	1	permission_id	int(10) unsigned	NO	PRI
+permission_role	2	role_id	int(10) unsigned	NO	PRI
+references	1	id	bigint(20) unsigned	NO	PRI
+references	2	from_id	bigint(20) unsigned	NO	MUL
+references	3	from_type	varchar(25)	NO	MUL
+references	4	to_id	bigint(20) unsigned	NO	MUL
+references	5	to_type	varchar(25)	NO	MUL
+roles	1	id	int(10) unsigned	NO	PRI
+roles	2	display_name	varchar(191)	YES	
+roles	3	description	varchar(191)	YES	
+roles	4	created_at	timestamp	YES	
+roles	5	updated_at	timestamp	YES	
+roles	6	system_name	varchar(191)	NO	MUL
+roles	7	external_auth_id	varchar(180)	NO	MUL
+roles	8	mfa_enforced	tinyint(1)	NO	
+role_permissions	1	id	int(10) unsigned	NO	PRI
+role_permissions	2	name	varchar(191)	NO	UNI
+role_permissions	3	created_at	timestamp	YES	
+role_permissions	4	updated_at	timestamp	YES	
+role_user	1	user_id	int(10) unsigned	NO	PRI
+role_user	2	role_id	int(10) unsigned	NO	PRI
+search_terms	1	id	int(10) unsigned	NO	PRI
+search_terms	2	term	varchar(180)	NO	MUL
+search_terms	3	entity_type	varchar(100)	NO	MUL
+search_terms	4	entity_id	bigint(20) unsigned	NO	
+search_terms	5	score	int(11)	NO	MUL
+sessions	1	id	varchar(191)	NO	PRI
+sessions	2	user_id	int(11)	YES	
+sessions	3	ip_address	varchar(45)	YES	
+sessions	4	user_agent	text	YES	
+sessions	5	payload	text	NO	
+sessions	6	last_activity	int(11)	NO	
+settings	1	setting_key	varchar(191)	NO	PRI
+settings	2	value	text	NO	
+settings	3	created_at	timestamp	YES	
+settings	4	updated_at	timestamp	YES	
+settings	5	type	varchar(50)	NO	
+slug_history	1	id	int(10) unsigned	NO	PRI
+slug_history	2	sluggable_type	varchar(10)	NO	MUL
+slug_history	3	sluggable_id	bigint(20) unsigned	NO	MUL
+slug_history	4	slug	varchar(191)	NO	MUL
+slug_history	5	parent_slug	varchar(191)	YES	MUL
+slug_history	6	created_at	timestamp	YES	
+slug_history	7	updated_at	timestamp	YES	
+social_accounts	1	id	int(10) unsigned	NO	PRI
+social_accounts	2	user_id	int(11)	NO	MUL
+social_accounts	3	driver	varchar(191)	NO	MUL
+social_accounts	4	driver_id	varchar(191)	NO	
+social_accounts	5	avatar	varchar(191)	NO	
+social_accounts	6	created_at	timestamp	YES	
+social_accounts	7	updated_at	timestamp	YES	
+sort_rules	1	id	int(10) unsigned	NO	PRI
+sort_rules	2	name	varchar(191)	NO	
+sort_rules	3	sequence	text	NO	
+sort_rules	4	created_at	timestamp	YES	
+sort_rules	5	updated_at	timestamp	YES	
+tags	1	id	int(10) unsigned	NO	PRI
+tags	2	entity_id	bigint(20) unsigned	NO	MUL
+tags	3	entity_type	varchar(100)	NO	
+tags	4	name	varchar(191)	NO	MUL
+tags	5	value	varchar(191)	NO	MUL
+tags	6	order	int(11)	NO	MUL
+tags	7	created_at	timestamp	YES	
+tags	8	updated_at	timestamp	YES	
+users	1	id	int(10) unsigned	NO	PRI
+users	2	name	varchar(191)	NO	
+users	3	email	varchar(191)	NO	UNI
+users	4	password	varchar(60)	NO	
+users	5	remember_token	varchar(100)	YES	
+users	6	created_at	timestamp	YES	
+users	7	updated_at	timestamp	YES	
+users	8	email_confirmed	tinyint(1)	NO	
+users	9	image_id	int(11)	NO	
+users	10	external_auth_id	varchar(191)	NO	MUL
+users	11	system_name	varchar(191)	YES	MUL
+users	12	slug	varchar(180)	NO	UNI
+user_invites	1	id	int(10) unsigned	NO	PRI
+user_invites	2	user_id	int(11)	NO	MUL
+user_invites	3	token	varchar(191)	NO	MUL
+user_invites	4	created_at	timestamp	YES	
+user_invites	5	updated_at	timestamp	YES	
+views	1	id	int(10) unsigned	NO	PRI
+views	2	user_id	int(11)	NO	MUL
+views	3	viewable_id	bigint(20) unsigned	NO	MUL
+views	4	viewable_type	varchar(191)	NO	MUL
+views	5	views	int(11)	NO	
+views	6	created_at	timestamp	YES	
+views	7	updated_at	timestamp	YES	MUL
+watches	1	id	int(10) unsigned	NO	PRI
+watches	2	user_id	int(11)	NO	MUL
+watches	3	watchable_id	bigint(20) unsigned	NO	MUL
+watches	4	watchable_type	varchar(100)	NO	
+watches	5	level	tinyint(3) unsigned	NO	MUL
+watches	6	created_at	timestamp	YES	
+watches	7	updated_at	timestamp	YES	
+webhooks	1	id	int(10) unsigned	NO	PRI
+webhooks	2	name	varchar(150)	NO	MUL
+webhooks	3	active	tinyint(1)	NO	MUL
+webhooks	4	endpoint	varchar(500)	NO	
+webhooks	5	created_at	timestamp	YES	
+webhooks	6	updated_at	timestamp	YES	
+webhooks	7	timeout	int(10) unsigned	NO	
+webhooks	8	last_error	text	NO	
+webhooks	9	last_called_at	timestamp	YES	
+webhooks	10	last_errored_at	timestamp	YES	
+webhook_tracked_events	1	id	int(10) unsigned	NO	PRI
+webhook_tracked_events	2	webhook_id	int(11)	NO	MUL
+webhook_tracked_events	3	event	varchar(50)	NO	MUL
+webhook_tracked_events	4	created_at	timestamp	YES	
+webhook_tracked_events	5	updated_at	timestamp	YES	

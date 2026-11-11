@@ -1,0 +1,1063 @@
+openapi: 3.1.0
+info:
+  title: media-svc — BookStack CNA
+  version: 1.0.0
+  description: Gestión de imágenes y miniaturas en almacenamiento de objetos con evento media.uploaded.
+  contact:
+    name: Equipo 03 — Arquitectura Web FP-UNA
+  license:
+    name: Uso académico — TP Integrador II
+servers:
+  - url: https://api.bookstack.local
+    description: Gateway único TLS del laboratorio.
+tags:
+  - name: media-svc
+    description: Gestión de imágenes y miniaturas en almacenamiento de objetos con evento media.uploaded.
+  - name: operations
+    description: Sondas y métricas en la red interna.
+security:
+  - ServiceApiKey: []
+paths:
+  /healthz:
+    get:
+      operationId: media_svc_health
+      summary: Comprobar vida
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar vida
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              examples:
+                example:
+                  summary: Comprobar vida
+                  value:
+                    status: ok
+                    service: media-svc
+      security: []
+      servers:
+        - url: http://media-svc:8000
+          description: Red interna de servicios.
+  /readyz:
+    get:
+      operationId: media_svc_ready
+      summary: Comprobar disponibilidad
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar disponibilidad
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ready"
+              examples:
+                example:
+                  summary: Comprobar disponibilidad
+                  value:
+                    status: ready
+                    service: media-svc
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://media-svc:8000
+          description: Red interna de servicios.
+  /metrics:
+    get:
+      operationId: media_svc_metrics
+      summary: Consultar métricas Prometheus
+      description: Métricas internas de solicitudes por código e histograma de duración. La instrumentación
+        incorporará las series necesarias para p50/p95/p99.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Exposición Prometheus.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                example:
+                  summary: Exposición Prometheus.
+                  value: |
+                    http_requests_total{code="200"} 1
+                    http_request_duration_seconds_bucket{le="0.1"} 1
+                    http_request_duration_seconds_bucket{le="+Inf"} 1
+                    http_request_duration_seconds_sum 0.05
+                    http_request_duration_seconds_count 1
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://media-svc:8000
+          description: Red interna de servicios.
+  /v2/media:
+    post:
+      operationId: uploadMedia
+      summary: Subir imagen y generar miniatura
+      description: Valida tamaño (máximo 10 MiB), firma y dimensiones (máximo 20 millones de píxeles). Conserva
+        proporción y limita la miniatura a 320 × 320 píxeles. Responde 200 cuando original y miniatura
+        son recuperables y media.uploaded está confirmado o registrado en outbox durable. La clave de
+        idempotencia permite retomar una subida interrumpida sin duplicar el resultado. No se aceptan SVG
+        ni tipos distintos de PNG, JPEG y WebP en esta versión.
+      tags:
+        - media-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Clave de la subida. Mismo contenido conserva media_id; otro contenido devuelve 409.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+            pattern: ^[A-Za-z0-9._-]+$
+          example: media-arquitectura-001
+      responses:
+        "200":
+          description: Imagen y miniatura disponibles.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Media"
+              examples:
+                example:
+                  summary: Imagen y miniatura disponibles.
+                  value:
+                    media_id: c2954672-f585-485b-9c2d-429d038ec849
+                    filename: arquitectura.png
+                    content_type: image/png
+                    size_bytes: 8192
+                    width: 1280
+                    height: 720
+                    created_at: 2026-11-11T14:00:00Z
+                    url: https://api.bookstack.local/v2/media/c2954672-f585-485b-9c2d-429d038ec849/content
+                    thumbnail:
+                      url: https://api.bookstack.local/v2/media/c2954672-f585-485b-9c2d-429d038ec849/thumbnail
+                      width: 320
+                      height: 180
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "409":
+          description: La misma clave de idempotencia se usó con otro contenido.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La misma clave de idempotencia se usó con otro contenido.
+                  value:
+                    error:
+                      code: idempotency_conflict
+                      message: La misma clave de idempotencia se usó con otro contenido.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "413":
+          description: El archivo supera el límite de tamaño.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El archivo supera el límite de tamaño.
+                  value:
+                    error:
+                      code: payload_too_large
+                      message: El archivo supera el límite de tamaño.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "415":
+          description: Tipo de archivo no admitido.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Tipo de archivo no admitido.
+                  value:
+                    error:
+                      code: unsupported_media_type
+                      message: Tipo de archivo no admitido.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      requestBody:
+        required: true
+        description: Archivo binario multipart y asociación opcional.
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PNG, JPEG o WebP. Máximo 10 MiB. La firma y dimensiones se validan.
+                page_id:
+                  type: integer
+                  minimum: 1
+                  description: Referencia opcional de página autorizada.
+              required:
+                - file
+              additionalProperties: false
+            encoding:
+              file:
+                contentType: image/png, image/jpeg, image/webp
+            examples:
+              upload:
+                summary: Referencia ilustrativa del multipart; file contiene bytes en la petición real.
+                value:
+                  file: <bytes de arquitectura.png>
+                  page_id: 42
+  /v2/media/{media_id}:
+    get:
+      operationId: getMedia
+      summary: Consultar metadatos
+      description: La credencial debe permitir leer este recurso. Se conserva X-Request-ID en la respuesta. Un
+        UUID válido sin recurso visible devuelve 404.
+      tags:
+        - media-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: media_id
+          in: path
+          required: true
+          description: UUID de la imagen.
+          schema:
+            type: string
+            format: uuid
+          example: c2954672-f585-485b-9c2d-429d038ec849
+      responses:
+        "200":
+          description: Metadatos del archivo.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Media"
+              examples:
+                example:
+                  summary: Metadatos del archivo.
+                  value:
+                    media_id: c2954672-f585-485b-9c2d-429d038ec849
+                    filename: arquitectura.png
+                    content_type: image/png
+                    size_bytes: 8192
+                    width: 1280
+                    height: 720
+                    created_at: 2026-11-11T14:00:00Z
+                    url: https://api.bookstack.local/v2/media/c2954672-f585-485b-9c2d-429d038ec849/content
+                    thumbnail:
+                      url: https://api.bookstack.local/v2/media/c2954672-f585-485b-9c2d-429d038ec849/thumbnail
+                      width: 320
+                      height: 180
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "404":
+          description: Recurso inexistente o no visible para esta credencial.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Recurso inexistente o no visible para esta credencial.
+                  value:
+                    error:
+                      code: not_found
+                      message: Recurso inexistente o no visible para esta credencial.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+  /v2/media/{media_id}/content:
+    get:
+      operationId: downloadMedia
+      summary: Descargar original
+      description: La credencial debe permitir leer este recurso. Se conserva X-Request-ID en la respuesta. Un
+        UUID válido sin recurso visible devuelve 404.
+      tags:
+        - media-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: media_id
+          in: path
+          required: true
+          description: UUID de la imagen.
+          schema:
+            type: string
+            format: uuid
+          example: c2954672-f585-485b-9c2d-429d038ec849
+      responses:
+        "200":
+          description: Archivo binario de imagen. Content-Type corresponde al formato del objeto; no es JSON.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "404":
+          description: Recurso inexistente o no visible para esta credencial.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Recurso inexistente o no visible para esta credencial.
+                  value:
+                    error:
+                      code: not_found
+                      message: Recurso inexistente o no visible para esta credencial.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+  /v2/media/{media_id}/thumbnail:
+    get:
+      operationId: downloadThumbnail
+      summary: Descargar miniatura
+      description: La credencial debe permitir leer este recurso. Se conserva X-Request-ID en la respuesta. Un
+        UUID válido sin recurso visible devuelve 404.
+      tags:
+        - media-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: media_id
+          in: path
+          required: true
+          description: UUID de la imagen.
+          schema:
+            type: string
+            format: uuid
+          example: c2954672-f585-485b-9c2d-429d038ec849
+      responses:
+        "200":
+          description: Archivo binario de imagen. Content-Type corresponde al formato del objeto; no es JSON.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "404":
+          description: Recurso inexistente o no visible para esta credencial.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Recurso inexistente o no visible para esta credencial.
+                  value:
+                    error:
+                      code: not_found
+                      message: Recurso inexistente o no visible para esta credencial.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+components:
+  securitySchemes:
+    ServiceApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Credencial de consumidor autorizada para este servicio. Se configura como secreto y no es el
+        token de la API de BookStack.
+  schemas:
+    RequestId:
+      type: string
+      minLength: 1
+      maxLength: 128
+      pattern: ^[A-Za-z0-9._-]+$
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              minLength: 1
+            message:
+              type: string
+              minLength: 1
+            request_id:
+              $ref: "#/components/schemas/RequestId"
+          required:
+            - code
+            - message
+            - request_id
+          additionalProperties: false
+      required:
+        - error
+      additionalProperties: false
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    Ready:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    Media:
+      type: object
+      properties:
+        media_id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content_type:
+          type: string
+          enum:
+            - image/png
+            - image/jpeg
+            - image/webp
+        size_bytes:
+          type: integer
+          minimum: 1
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        url:
+          type: string
+          format: uri
+        thumbnail:
+          type: object
+          properties:
+            url:
+              type: string
+              format: uri
+            width:
+              type: integer
+              minimum: 1
+              maximum: 320
+            height:
+              type: integer
+              minimum: 1
+              maximum: 320
+          required:
+            - url
+            - width
+            - height
+          additionalProperties: false
+      required:
+        - media_id
+        - filename
+        - content_type
+        - size_bytes
+        - width
+        - height
+        - created_at
+        - url
+        - thumbnail
+      additionalProperties: false

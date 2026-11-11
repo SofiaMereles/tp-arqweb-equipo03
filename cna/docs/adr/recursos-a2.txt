@@ -1,0 +1,7 @@
+Medicion de A2 en Windows, 11/11/2026. Consultas Get-CimInstance de solo lectura.
+Win32_ComputerSystem.TotalPhysicalMemory = 16442781696 bytes
+Win32_ComputerSystem.NumberOfLogicalProcessors = 12
+Win32_OperatingSystem.TotalVisibleMemorySize = 16057404 KiB
+Win32_OperatingSystem.FreePhysicalMemory = 2249404 KiB
+Los valores de memoria libre son una instantanea y deben repetirse antes de crear VM-2.
+VM-1: VMware asigna 2 vCPU y 4 GB; relevamiento previo de Ubuntu reporto 3,3 GiB totales y 2,6 GiB disponibles.

@@ -1,0 +1,715 @@
+openapi: 3.1.0
+info:
+  title: audit-svc — BookStack CNA
+  version: 1.0.0
+  description: Consulta de auditoría. Los registros se crean exclusivamente mediante eventos durables.
+  contact:
+    name: Equipo 03 — Arquitectura Web FP-UNA
+  license:
+    name: Uso académico — TP Integrador II
+servers:
+  - url: https://api.bookstack.local
+    description: Gateway único TLS del laboratorio.
+tags:
+  - name: audit-svc
+    description: Consulta de auditoría. Los registros se crean exclusivamente mediante eventos durables.
+  - name: operations
+    description: Sondas y métricas en la red interna.
+security:
+  - ServiceApiKey: []
+paths:
+  /healthz:
+    get:
+      operationId: audit_svc_health
+      summary: Comprobar vida
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar vida
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              examples:
+                example:
+                  summary: Comprobar vida
+                  value:
+                    status: ok
+                    service: audit-svc
+      security: []
+      servers:
+        - url: http://audit-svc:8000
+          description: Red interna de servicios.
+  /readyz:
+    get:
+      operationId: audit_svc_ready
+      summary: Comprobar disponibilidad
+      description: Endpoint interno. Vida verifica el proceso; disponibilidad verifica las dependencias
+        necesarias para aceptar trabajo. No se publica en el gateway externo.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Comprobar disponibilidad
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ready"
+              examples:
+                example:
+                  summary: Comprobar disponibilidad
+                  value:
+                    status: ready
+                    service: audit-svc
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://audit-svc:8000
+          description: Red interna de servicios.
+  /metrics:
+    get:
+      operationId: audit_svc_metrics
+      summary: Consultar métricas Prometheus
+      description: Métricas internas de solicitudes por código e histograma de duración. La instrumentación
+        incorporará las series necesarias para p50/p95/p99.
+      tags:
+        - operations
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+      responses:
+        "200":
+          description: Exposición Prometheus.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                example:
+                  summary: Exposición Prometheus.
+                  value: |
+                    http_requests_total{code="200"} 1
+                    http_request_duration_seconds_bucket{le="0.1"} 1
+                    http_request_duration_seconds_bucket{le="+Inf"} 1
+                    http_request_duration_seconds_sum 0.05
+                    http_request_duration_seconds_count 1
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+      security: []
+      servers:
+        - url: http://audit-svc:8000
+          description: Red interna de servicios.
+  /v2/audit:
+    get:
+      operationId: listAuditRecords
+      summary: Consultar actividad
+      description: Filtra por entidad, ID y rango de fechas inclusivo. El rango from > to devuelve 400. El
+        parámetro id requiere entity. Se ordena por occurred_at descendente y event_id como desempate. Un
+        mismo event_id produce un solo registro por consumidor.
+      tags:
+        - audit-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: entity
+          in: query
+          required: false
+          description: Tipo del objeto.
+          schema:
+            type: string
+            enum:
+              - page
+              - book
+              - media
+              - export
+          example: page
+        - name: id
+          in: query
+          required: false
+          description: ID del objeto. Requiere entity.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          example: "42"
+        - name: from
+          in: query
+          required: false
+          description: Inicio inclusivo, ISO 8601 con zona.
+          schema:
+            type: string
+            format: date-time
+          example: 2026-11-11T14:00:00Z
+        - name: to
+          in: query
+          required: false
+          description: Fin inclusivo, ISO 8601 con zona.
+          schema:
+            type: string
+            format: date-time
+          example: 2026-11-12T14:00:00Z
+        - name: limit
+          in: query
+          required: false
+          description: Máximo de resultados por página.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 20
+        - name: offset
+          in: query
+          required: false
+          description: Cantidad de registros a omitir.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+      responses:
+        "200":
+          description: Registros de auditoría.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditResults"
+              examples:
+                example:
+                  summary: Registros de auditoría.
+                  value:
+                    total: 1
+                    limit: 20
+                    offset: 0
+                    items:
+                      - event_id: 4e07d48d-e610-4b7f-9d2c-a10e960ec8b7
+                        type: bookstack.page.updated
+                        occurred_at: 2026-11-11T14:00:00Z
+                        recorded_at: 2026-11-11T14:00:00Z
+                        request_id: 9c7059e1b4954ed8934ba05643761378
+                        actor:
+                          id: 3
+                          name: Usuario de laboratorio
+                        entity:
+                          type: page
+                          id: "42"
+                        action: updated
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+  /v2/audit/{event_id}:
+    get:
+      operationId: getAuditRecord
+      summary: Consultar un evento registrado
+      description: Devuelve el registro visible identificado por el UUID del evento.
+      tags:
+        - audit-svc
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: El gateway genera el identificador de la petición externa. Los servicios y eventos conservan
+            ese valor.
+          schema:
+            $ref: "#/components/schemas/RequestId"
+          example: 9c7059e1b4954ed8934ba05643761378
+        - name: event_id
+          in: path
+          required: true
+          description: UUID del evento.
+          schema:
+            type: string
+            format: uuid
+          example: 4e07d48d-e610-4b7f-9d2c-a10e960ec8b7
+      responses:
+        "200":
+          description: Registro de auditoría.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditRecord"
+              examples:
+                example:
+                  summary: Registro de auditoría.
+                  value:
+                    event_id: 4e07d48d-e610-4b7f-9d2c-a10e960ec8b7
+                    type: bookstack.page.updated
+                    occurred_at: 2026-11-11T14:00:00Z
+                    recorded_at: 2026-11-11T14:00:00Z
+                    request_id: 9c7059e1b4954ed8934ba05643761378
+                    actor:
+                      id: 3
+                      name: Usuario de laboratorio
+                    entity:
+                      type: page
+                      id: "42"
+                    action: updated
+        "400":
+          description: Solicitud inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Solicitud inválida.
+                  value:
+                    error:
+                      code: invalid_request
+                      message: Solicitud inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "401":
+          description: Credencial ausente o inválida.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Credencial ausente o inválida.
+                  value:
+                    error:
+                      code: unauthorized
+                      message: Credencial ausente o inválida.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "403":
+          description: La credencial no permite esta operación.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: La credencial no permite esta operación.
+                  value:
+                    error:
+                      code: forbidden
+                      message: La credencial no permite esta operación.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "404":
+          description: Recurso inexistente o no visible para esta credencial.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Recurso inexistente o no visible para esta credencial.
+                  value:
+                    error:
+                      code: not_found
+                      message: Recurso inexistente o no visible para esta credencial.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "429":
+          description: Se excedió el límite de solicitudes.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: Se excedió el límite de solicitudes.
+                  value:
+                    error:
+                      code: rate_limited
+                      message: Se excedió el límite de solicitudes.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+        "503":
+          description: El servicio o una dependencia necesaria no está disponible.
+          headers:
+            X-Request-ID:
+              description: Identificador correlacionado de la solicitud.
+              schema:
+                $ref: "#/components/schemas/RequestId"
+              example: 9c7059e1b4954ed8934ba05643761378
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example:
+                  summary: El servicio o una dependencia necesaria no está disponible.
+                  value:
+                    error:
+                      code: service_unavailable
+                      message: El servicio o una dependencia necesaria no está disponible.
+                      request_id: 9c7059e1b4954ed8934ba05643761378
+components:
+  securitySchemes:
+    ServiceApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Credencial de consumidor autorizada para este servicio. Se configura como secreto y no es el
+        token de la API de BookStack.
+  schemas:
+    RequestId:
+      type: string
+      minLength: 1
+      maxLength: 128
+      pattern: ^[A-Za-z0-9._-]+$
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              minLength: 1
+            message:
+              type: string
+              minLength: 1
+            request_id:
+              $ref: "#/components/schemas/RequestId"
+          required:
+            - code
+            - message
+            - request_id
+          additionalProperties: false
+      required:
+        - error
+      additionalProperties: false
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    Ready:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+        service:
+          type: string
+          minLength: 1
+      required:
+        - status
+        - service
+      additionalProperties: false
+    Actor:
+      type: object
+      properties:
+        id:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+        name:
+          type: string
+          minLength: 1
+          maxLength: 191
+      required:
+        - id
+        - name
+      additionalProperties: false
+    AuditRecord:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          minLength: 1
+        occurred_at:
+          type: string
+          format: date-time
+        recorded_at:
+          type: string
+          format: date-time
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+        actor:
+          $ref: "#/components/schemas/Actor"
+        entity:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - page
+                - book
+                - media
+                - export
+            id:
+              type: string
+              minLength: 1
+          required:
+            - type
+            - id
+          additionalProperties: false
+        action:
+          type: string
+          minLength: 1
+      required:
+        - event_id
+        - type
+        - occurred_at
+        - recorded_at
+        - request_id
+        - actor
+        - entity
+        - action
+      additionalProperties: false
+    AuditResults:
+      type: object
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditRecord"
+      required:
+        - total
+        - limit
+        - offset
+        - items
+      additionalProperties: false

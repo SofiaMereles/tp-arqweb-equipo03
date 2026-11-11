@@ -43,6 +43,7 @@
 % =======================================================================
 % ESTILO DE ENCABEZADOS Y PIE DE PÁGINA
 % =======================================================================
+\setlength{\headheight}{14pt}
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\small\color{SlateSecondary}\textbf{ARQ-WEB 2026} -- Proyecto Integrador}
@@ -92,7 +93,7 @@
     filecolor=AccentBlue,      
     urlcolor=AccentBlue,
     citecolor=NavyPrimary,
-    pdftitle={Trabajo Práctico Integrador -- ARQ-WEB 2026},
+    pdftitle={Trabajo Práctico Integrador I y II -- ARQ-WEB 2026},
 }
 
 % =======================================================================
@@ -101,7 +102,7 @@
 \begin{document}
 
 \begin{center}
-    {\color{NavyPrimary}\Huge\bfseries Trabajo Práctico Integrador}\\[0.3cm]
+    {\color{NavyPrimary}\Huge\bfseries Trabajo Práctico Integrador I y II}\\[0.3cm]
     {\color{SlateSecondary}\Large\bfseries Asignatura: Arquitectura Web -- FP-UNA 2026}\\[0.5cm]
     {\color{DarkText}\large\textbf{Despliegue, conectividad, seguridad TLS 1.3, verificación experimental, resiliencia y observabilidad de una aplicación web}}\\[0.6cm]
     
@@ -109,7 +110,7 @@
         \centering \small
         \textbf{Autores:} Sofia Mereles \quad|\quad Alba Martinez \quad|\quad Guillermo Gonzalez\\
         \textbf{Institución:} Facultad Politécnica -- Universidad Nacional de Asunción (FP-UNA)\\
-        \textbf{Fecha:} Septiembre 2026
+        \textbf{Fecha:} Noviembre 2026 -- Avance hasta Fase 5 A3
     \end{tcolorbox}
 \end{center}
 
@@ -118,6 +119,15 @@
 \begin{abstract}
 \noindent El presente informe documenta las Fases 1, 2, 3 y 4 del proyecto integrador de la asignatura \textbf{Arquitectura Web}. En la primera etapa se estableció la línea base de la infraestructura servidor mediante la configuración de un entorno virtualizado en Ubuntu Server en modo puente (\textit{Bridged}), evaluando y seleccionando la plataforma \textbf{BookStack}. En la segunda etapa se llevó a cabo el despliegue del stack LNMP (Linux, Nginx, MariaDB, PHP 8.5-FPM), la ejecución de migraciones de base de datos y la verificación del servicio HTTP. En la tercera etapa se implementó la capa de seguridad con TLS 1.3 sobre el dominio \texttt{bookstack.local}, la redirección automática HTTPS, la evaluación experimental del rendimiento de la negociación criptográfica, la inspección de cabeceras HTTP/Gzip/Caché, la comparativa de arquitectura entre proxy e interfaz FastCGI, y el análisis de trazas de red mediante \texttt{tcpdump}. Finalmente, en la cuarta etapa se realizó el endurecimiento (\textit{hardening}) del firewall UFW, la auditoría avanzada de cabeceras de seguridad, la simulación de fallos y resiliencia de servicios, pruebas de carga concurrente con \texttt{ab}, la observabilidad en tiempo real con \texttt{htop} y la matriz de pruebas consolidada.
 \end{abstract}
+
+\noindent\textbf{Continuación del TP II.} Se incorpora el análisis A1 de la
+Fase 5, con inventario del esquema real, matriz de acoplamiento respaldada
+por código y mapas de contextos del monolito y de su integración. El análisis documenta
+los seis módulos funcionales y las evidencias F5-E1 a F5-E3. Se incorporan
+también los ADR-006 a ADR-010 del apartado A2, con decisiones, alternativas
+y consecuencias para la evolución de la plataforma. El apartado A3 define
+los contratos HTTP y de eventos, su política de versionado y la validación
+reproducible F5-E4.
 
 \vspace{0.2cm}
 \tableofcontents
@@ -741,6 +751,9 @@ En el ciclo final de auditoría se trataron dos hallazgos técnicos principales:
 
 \hline
 \rowcolor{NavyPrimary} \color{white}\textbf{ID} & \color{white}\textbf{Fase} & \color{white}\textbf{Dimensión} & \color{white}\textbf{Prueba y Evidencia Visual} & \color{white}\textbf{Resultado} \\ \hline
+\endfirsthead
+\hline
+\rowcolor{NavyPrimary} \color{white}\textbf{ID} & \color{white}\textbf{Fase} & \color{white}\textbf{Dimensión} & \color{white}\textbf{Prueba y Evidencia Visual} & \color{white}\textbf{Resultado} \\ \hline
 \endhead
 
 \hline
@@ -774,7 +787,7 @@ P25 & Fase 4 & Observabilidad & Medición de CPU/RAM en \texttt{htop} bajo carga
 \end{xltabular}
 \normalsize
 
-\section{Conclusión}
+\section{Conclusión del TP Integrador I}
 El proyecto integrador para el despliegue, aseguramiento, resiliencia y análisis de la plataforma \textbf{BookStack} ha sido completado con éxito alcanzando el **100\% de los objetivos y criterios de aceptación exigidos**.
 
 Durante el desarrollo de las cuatro fases del proyecto se logró:
@@ -788,5 +801,9 @@ Durante el desarrollo de las cuatro fases del proyecto se logró:
 \end{enumerate}
 
 El entorno resultante constituye una solución robusta, segura, resiliente y observable alineada con las mejores prácticas internacionales de Arquitectura Web.
+
+\input{fase5-a1.tex}
+\input{fase5-a2.tex}
+\input{fase5-a3.tex}
 
 \end{document}

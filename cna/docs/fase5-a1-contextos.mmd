@@ -1,0 +1,28 @@
+%% F5-E3 / P28. Vista actual: contextos logicos dentro del monolito.
+flowchart TB
+    subgraph actual[Situacion actual - BookStack monolitico]
+        U[Usuarios y permisos]
+        C[Contenido]
+        B[Busqueda]
+        A[Actividad y auditoria]
+        M[Imagenes y adjuntos]
+        X[Exportacion]
+        U -->|Proveedor de autorizacion y propiedad| C
+        U -->|Visibilidad de resultados| B
+        U -->|Visibilidad del objeto| A
+        U -->|Permisos sobre la pagina| M
+        U -->|Contenido visible y ContentExport| X
+        C -->|Datos, etiquetas e indexacion sincrona| B
+        C -->|Acciones de contenido| A
+        U -->|Acciones de administracion| A
+        M -->|Proveedor de archivos referenciados| C
+        C -->|HTML y revisiones para limpieza| M
+        C -->|Proveedor de paginas y arbol del libro| X
+        M -->|Adjuntos e imagenes de ZIP| X
+    end
+    DB[(MariaDB compartida - 41 tablas)]
+    actual --- DB
+    %% Las flechas representan informacion o capacidad del proveedor al consumidor.
+
+%% F5-E3 / P28. Vista propuesta: extraer sin modificar BookStack.
+%% El segundo diagrama se renderiza por separado.

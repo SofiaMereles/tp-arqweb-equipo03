@@ -1,0 +1,7 @@
+﻿Modulo,entities,entity_container_data,entity_page_data,page_revisions,search_terms,tags,bookshelves_books,activities,users,roles,role_user,role_permissions,permission_role,entity_permissions,joint_permissions,images,attachments
+Contenido,L/E,L/E,L/E,L/E,D(E),L/E,L/E,D(E),—,—,—,—,—,—,D(E),—,—
+Búsqueda,L,L,L,—,L/E,L,—,—,—,—,—,—,—,—,D(L),—,—
+Actividad / auditoría,L,L,L,—,—,—,—,L/E,L,—,—,—,—,—,D(L),L (avatar),—
+Exportación,L,L,L,—,—,L (ZIP),—,—,—,—,—,—,—,—,D(L),L (ZIP),L (ZIP)
+Imágenes / adjuntos,D(L),—,L,L,—,—,—,—,—,—,—,—,—,—,D(L),L/E,L/E
+Usuarios / permisos,L/E,L,L,E,—,—,—,D(E),L/E,L/E,L/E,L,L/E,L/E,L/E,E,E
