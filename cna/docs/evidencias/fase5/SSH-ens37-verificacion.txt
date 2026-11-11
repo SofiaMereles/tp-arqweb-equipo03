@@ -1,0 +1,18 @@
+Verificacion de SSH por la interfaz Solo host (ens37)
+Fecha local: 2026-11-11 (America/Asuncion)
+Consultas de solo lectura. Autenticacion correcta; credencial omitida.
+
+Comando:
+ssh arqweb@192.168.145.129 'hostname; whoami; ip -br addr; printenv SSH_CONNECTION'
+
+Salida remota:
+arqwebserver
+arqweb
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens33            UP             10.145.148.231/24 metric 1024 2803:7d80:41c8:e010:20c:29ff:fefa:ebcd/64 fe80::20c:29ff:fefa:ebcd/64
+ens37            UP             192.168.145.129/24 metric 1024 fe80::20c:29ff:fefa:ebd7/64
+192.168.145.1 57857 192.168.145.129 22
+
+Codigo de salida de SSH: 0
+SSH_CONNECTION indica: IP cliente, puerto cliente, IP servidor, puerto servidor.
+Resultado: acceso confirmado desde 192.168.145.1 a 192.168.145.129:22.

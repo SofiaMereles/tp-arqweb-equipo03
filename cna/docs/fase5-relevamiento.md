@@ -27,7 +27,9 @@ Para el adaptador Solo host, si conserva su dirección:
 ssh arqweb@192.168.145.129
 ```
 
-En las pruebas realizadas, SSH funcionó por `ens33`; la conectividad por `ens37` queda pendiente de verificar. El modo Solo host permite comunicación con el anfitrión, pero no garantiza que SSH sea accesible: también deben estar configurados el adaptador virtual de Windows, las rutas, el servicio y el firewall. Tener una IP asignada no demuestra por sí solo que la conexión funcione.
+SSH se verificó por ambas interfaces. El 11/11/2026 se confirmó una sesión por `ens37`, desde el anfitrión `192.168.145.1` hacia `192.168.145.129:22`, con usuario `arqweb` y hostname remoto `arqwebserver`. La salida se conserva en [la evidencia de acceso Solo host](evidencias/fase5/SSH-ens37-verificacion.txt). Desde este anfitrión se puede utilizar la dirección Solo host mientras conserve esa configuración, sin depender de los cambios de la red física.
+
+El modo Solo host permite comunicación con el anfitrión, pero el acceso también depende del adaptador virtual de Windows, las rutas, el servicio y el firewall. Tener una IP asignada no demuestra por sí solo que la conexión funcione; la sesión SSH anterior confirma el acceso en la configuración observada.
 
 ## 2. Relevar sistema y servicios dentro de Ubuntu
 
