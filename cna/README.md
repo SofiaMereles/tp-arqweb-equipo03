@@ -1,6 +1,6 @@
 # TP Integrador II: evolución de BookStack
 
-Continuación del TP I. Estado: Fase 5 A1, A2, A3 y A4 documentados, con contratos validados y evidencias de diseño guardadas. A5 está pendiente; todavía no hay servicios implementados ni despliegue reproducible.
+Continuación del TP I. Estado: diseño de Fase 5 A1–A5 documentado, con contratos validados y evidencias de diseño guardadas. La implementación y las pruebas de Fases 6/7 siguen pendientes; todavía no hay servicios implementados ni despliegue reproducible.
 
 ## Orden de trabajo
 
@@ -36,5 +36,9 @@ Los contratos OpenAPI 3.1 de S1–S4 y del puente y el AsyncAPI 3.0 están en [c
 ## Diagramas de A4
 
 El [modelo C4 y las tres secuencias](docs/diagramas/a4/README.md) tienen fuentes PlantUML editables, PNG para el informe y SVG para ampliar. Se incluyen nodos, puertos y caminos de error, distinguiendo lo existente del diseño objetivo. Las evidencias F5-E5–F5-E7 y su registro de renderizado están en `docs/evidencias/fase5/a4/`. La coherencia con el despliegue efectivo se revisará en Fase 6.
+
+## Migración y riesgos de A5
+
+El [plan de migración](docs/a5/plan-migracion.md) ordena S2 → S1 → S3 → S4 y define criterios de hecho por paso. El [runbook](docs/a5/reversion.md) planifica reversión por ruta en menos de un minuto conservando jobs y objetos; todavía no se ha ejecutado ni cronometrado. La matriz de trece riesgos se edita en `docs/a5/matriz-riesgos.csv` y se regenera para LaTeX con `python cna/docs/a5/generar-matriz.py` desde la raíz del repositorio. El [registro A5](docs/evidencias/fase5/a5/README.md) distingue revisión documental de ensayos pendientes.
 
 Al implementar se incorporarán `services/`, `deploy/` y `observability/`. Los contratos ya están en `contracts/`; los diagramas, decisiones y análisis se conservan en `docs/`.

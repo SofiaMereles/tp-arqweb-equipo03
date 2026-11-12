@@ -1,0 +1,66 @@
+% Generado por generar-matriz.py. Editar el CSV y regenerar.
+\clearpage
+\begin{table}[H]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\caption{Matriz de riesgos de A5, parte 1/4: probabilidad, impacto, mitigaciones y puntaje residual estimado.}\label{tab:a5-riesgos}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.75cm} >{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{ID} & \textbf{Riesgo} & \textbf{P/I/R} & \textbf{Mitigación, señal y verificación} \\
+\midrule
+R01 & Consistencia eventual visible & 3/2/6\par Residual: 2 & Consumidor durable; cursor antes de carga inicial; reconciliar por API y serializar por entidad; informar retraso y retirar búsqueda si incumple.\par\textbf{Señal:} Edición no visible antes de 5 s o proyección divergente.\par\textbf{Rol:} Búsqueda. \textbf{Verificar:} Medir diez ediciones individualmente; probar creación y borrado; repetir tras reentrega. \\[4pt]
+R02 & Presión de RAM en anfitrión y VM & 3/3/9\par Residual: 4 & Medir recursos reales; liberar memoria antes de VM-2; presupuestar límites y reservar margen para SO y monolito; habilitar dependencias por etapas.\par\textbf{Señal:} OOM o presión sostenida; el monolito degrada al agregar servicios.\par\textbf{Rol:} Infraestructura. \textbf{Verificar:} Capturar memoria y docker stats en reposo/carga; detener admisiones si se excede el presupuesto. \\[4pt]
+R03 & Latencia de red entre VM y API & 2/2/4\par Residual: 2 & Red privada; timeout; backoff con jitter; circuito; límites de concurrencia; no saturar PHP-FPM.\par\textbf{Señal:} Timeouts o colas crecientes; latencia inducida de 2 s.\par\textbf{Rol:} Integración. \textbf{Verificar:} Ensayo X5; medir p95 y recuperación sin saturación; contrastar con línea base. \\[4pt]
+R04 & Secretos compartidos o filtrados & 2/3/6\par Residual: 3 & Roles y credenciales por servicio; secretos externos a Git; permisos mínimos; redacción de tokens y cookies; rotación y revocación.\par\textbf{Señal:} Token en un log o acceso cruzado entre bases/servicios.\par\textbf{Rol:} Seguridad. \textbf{Verificar:} Probar rechazo con rol ajeno y token revocado; revisar evidencias sanitizadas y rotación. \\[4pt]
+\bottomrule
+\end{tabularx}
+\end{table}
+\clearpage
+\begin{table}[H]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\caption{Matriz de riesgos de A5, parte 2/4: probabilidad, impacto, mitigaciones y puntaje residual estimado.}\label{tab:a5-riesgos-2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.75cm} >{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{ID} & \textbf{Riesgo} & \textbf{P/I/R} & \textbf{Mitigación, señal y verificación} \\
+\midrule
+R05 & Punto único de falla en gateway y VM-1 & 2/3/6\par Residual: 3 & Mantener configuración válida respaldada; nginx -t y reload; monitorear; preparar recuperación del nodo. Aceptar falta de HA en laboratorio.\par\textbf{Señal:} Gateway o VM-1 no responde; falla de recarga.\par\textbf{Rol:} Infraestructura. \textbf{Verificar:} Probar recuperación de configuración y medir MTTR; no prometer rollback de 60 s con nodo caído. \\[4pt]
+R06 & Pérdida por retención o fallo del broker & 2/3/6\par Residual: 3 & JetStream en volumen; límites y retención suficientes; inbox/outbox persistente; ACK tras commit; transferencia DLQ confirmada y respaldos.\par\textbf{Señal:} Stream cerca de cuota o evento aceptado no publicado.\par\textbf{Rol:} Eventos. \textbf{Verificar:} Detener S2 durante veinte ediciones; verificar pendientes y recuperación; probar broker caído con outbox. \\[4pt]
+R07 & Webhook que nunca llega al puente & 2/3/6\par Residual: 6 & Monitorear errores de origen; validar recuperación de origen sin cambiar BookStack; reconciliar índice por API. No afirmar auditoría histórica completa sin esa validación.\par\textbf{Señal:} Edición nativa sin entrada persistida en el puente.\par\textbf{Rol:} Integración. \textbf{Verificar:} Interrumpir tramo de origen y contrastar acciones; validar qué datos se recuperan. Riesgo sigue alto mientras falte procedimiento probado. \\[4pt]
+R08 & Exposición de contenido sin autorización & 2/3/6\par Residual: 3 & Limitar alcance compartido de laboratorio; validar credenciales antes de devolver texto o archivos; roles y red privada; no exponer puertos de servicio.\par\textbf{Señal:} Cliente obtiene página o archivo fuera de su alcance.\par\textbf{Rol:} Seguridad. \textbf{Verificar:} Casos negativos de búsqueda/exportación/medios; comprobar acceso externo únicamente por gateway. \\[4pt]
+\bottomrule
+\end{tabularx}
+\end{table}
+\clearpage
+\begin{table}[H]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\caption{Matriz de riesgos de A5, parte 3/4: probabilidad, impacto, mitigaciones y puntaje residual estimado.}\label{tab:a5-riesgos-3}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.75cm} >{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{ID} & \textbf{Riesgo} & \textbf{P/I/R} & \textbf{Mitigación, señal y verificación} \\
+\midrule
+R09 & Jobs duplicados o bloqueados en running & 2/2/4\par Residual: 2 & Idempotency-Key; creación atómica; reserva renovable y recuperable; clave estable de objeto; intentos acotados y failed con causa.\par\textbf{Señal:} Reserva vencida sin recuperación o más de un job por misma solicitud.\par\textbf{Rol:} Exportación. \textbf{Verificar:} Matar worker; recuperar mismo job; repetir clave; inspeccionar estados y objeto final. \\[4pt]
+R10 & Objetos perdidos o referencias rotas al revertir & 2/3/6\par Residual: 3 & Conservar GET y buckets al cerrar POST; copias y restauración aislada; no reemplazar URLs nativas masivamente; firma S3 accesible por gateway.\par\textbf{Señal:} Imagen referenciada o descarga de job deja de abrir.\par\textbf{Rol:} Almacenamiento. \textbf{Verificar:} Abrir objetos previos después de rollback/reinicio; probar restauración y vencimiento de URL. \\[4pt]
+R11 & Cambio de IP o red del laboratorio & 3/2/6\par Residual: 2 & Usar red Solo host entre nodos y nombres configurables; registrar direcciones vigentes; reservar o fijar IP tras revisar DHCP; actualizar hosts sin cambiar contratos.\par\textbf{Señal:} Cambiar Wi-Fi rompe conexión o resolución.\par\textbf{Rol:} Infraestructura. \textbf{Verificar:} Repetir conectividad por ens37 y resolución de dominios al cambiar la red física. \\[4pt]
+R12 & Reversión lenta o incompatible & 2/3/6\par Residual: 3 & Preparar variantes por ruta; cambio atómico con bloqueo; validar y recargar; probes nuevos y función nativa; conservar jobs y objetos. No redirigir POST a API incompatible.\par\textbf{Señal:} No termina antes de 60 s o la API retirada sigue recibiendo nuevas solicitudes.\par\textbf{Rol:} Operación. \textbf{Verificar:} Cronometrar cada selector; probar fallo de validación y restauración; guardar respuestas y operación nativa. \\[4pt]
+\bottomrule
+\end{tabularx}
+\end{table}
+\clearpage
+\begin{table}[H]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\caption{Matriz de riesgos de A5, parte 4/4: probabilidad, impacto, mitigaciones y puntaje residual estimado.}\label{tab:a5-riesgos-4}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.75cm} >{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{1.8cm} >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{ID} & \textbf{Riesgo} & \textbf{P/I/R} & \textbf{Mitigación, señal y verificación} \\
+\midrule
+R13 & Disco lleno o pérdida de volumen local & 2/3/6\par Residual: 3 & Cuotas de logs y objetos; monitorear capacidad; límites de retención sin romper replay; backups y restauración aislada; fijar volúmenes a VM-2.\par\textbf{Señal:} Capacidad por encima del margen acordado o error de persistencia.\par\textbf{Rol:} Almacenamiento. \textbf{Verificar:} Medir disco con carga; probar rechazo sin falsa aceptación y recuperar volumen con datos previos. \\[4pt]
+\bottomrule
+\end{tabularx}
+\end{table}

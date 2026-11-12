@@ -1,6 +1,6 @@
-# Informe integrado hasta Fase 5 A4
+# Informe integrado hasta Fase 5 A5
 
-El archivo raíz es `main.tex`. A1–A4 están en `fase5-a1.tex` a `fase5-a4.tex`, incorporados con `\input` antes de `\end{document}`. Se conservan los estilos y colores del preámbulo original; A4 añade `lscape` para las láminas horizontales de nivel 2. La Fase 5 continúa como sección 10 y usa numeración automática de figuras y tablas. El índice y las referencias usan `hyperref`.
+El archivo raíz es `main.tex`. A1–A5 están en `fase5-a1.tex` a `fase5-a5.tex`, incorporados con `\input` antes de `\end{document}`. Se conservan los estilos y colores del preámbulo original; A4 añade `lscape` para las láminas horizontales de nivel 2. La Fase 5 continúa como sección 10 y usa numeración automática de figuras y tablas. El índice y las referencias usan `hyperref`.
 
 La portada identifica TP I y II y la fecha de noviembre de 2026. La conclusión histórica lleva el título «Conclusión del TP Integrador I». A1 incluye los seis módulos, las 41 tablas del inventario, una matriz de 6 × 17 tablas principales, el análisis de acoplamientos y los mapas DDD actual y de integración. P26, P27 y P28 figuran completados.
 
@@ -74,3 +74,7 @@ El archivo `fase5-a3.tex` incorpora los cinco OpenAPI 3.1, los seis canales Asyn
 ## Modelo y secuencias A4
 
 `fase5-a4.tex` incorpora contexto C4, nivel 2 en dos vistas complementarias y tres secuencias con alternativas de error. Edición y exportación tienen dos láminas cada una. Las fuentes y el script reproducible están en `cna/docs/diagramas/a4/`; los PNG, SVG y reportes con hashes, en `cna/docs/evidencias/fase5/a4/`. Los SVG son útiles para ampliar los diagramas densos. Se documenta la arquitectura objetivo y se mantiene la Figura 1 como línea base; no se declara desplegada la extensión CNA. Después de modificar un `.puml`, ejecutar `renderizar.ps1`, compilar el informe y revisar las páginas afectadas.
+
+## Migración y riesgos A5
+
+`fase5-a5.tex` incorpora el orden de extracción, criterios de hecho, reversión planificada y matriz de trece riesgos. La tabla se incluye desde `cna/docs/a5/matriz-riesgos.tex`, generada con `python cna/docs/a5/generar-matriz.py` a partir del CSV. Regenerar antes de compilar si se cambia la matriz. El plan y runbook completos están junto al CSV. El directorio de evidencias A5 registra revisión documental y ensayos pendientes; no hay una duración de rollback medida. El diseño A1–A5 queda documentado sin dar por aprobadas las pruebas operativas de Fases 6/7.

@@ -1,0 +1,217 @@
+% !TeX root = main.tex
+\clearpage
+\subsection{A5: Plan de migración y matriz de riesgos}
+\label{sec:fase5-a5}
+
+\subsubsection{Alcance y reglas de transición}
+
+El plan desarrolla las secciones 4.5 y 4.6 de la consigna: orden de extracción
+justificado, criterio de hecho por etapa, reversión planificada en menos de
+un minuto y matriz de probabilidad por impacto con mitigaciones. Se apoya
+en ADR-006--010, contratos A3 y modelo A4. Las fuentes editables se conservan
+en \path{cna/docs/a5/}.
+
+BookStack conserva su código, contenido, permisos y MariaDB. La integración
+se limita a REST y Webhooks; no se entregan credenciales de MariaDB a los
+servicios nuevos. Se habilita una funcionalidad por vez, después de probarla
+en paralelo, y se mantiene disponible su alternativa nativa. Cerrar una
+entrada no implica borrar colas, eventos, trabajos ni archivos.
+
+\textbf{Estado: plan de diseño.} Los criterios de hecho siguientes son
+condiciones de salida para ejecutar en Fases 6 y 7, no pruebas aprobadas.
+La duración de reversión y la recuperación de datos no se han medido.
+El cierre documental de Fase 5 no equivale a cumplir los criterios globales
+CA-1--CA-7 del trabajo completo.
+
+\subsubsection{Orden de extracción y criterio de hecho}
+
+El orden relativo es \textbf{S2 auditoría, S1 búsqueda, S3 exportación y S4
+medios}. Primero se agregan registros y proyecciones sin reemplazar el
+contenido; después se incorporan trabajos y objetos con referencias
+duraderas. La prioridad se refiere al impacto funcional y al costo de
+reversión en esta instalación. No implica que se tolere perder auditoría.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{1.1cm} >{\raggedright\arraybackslash}p{2.7cm} >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Paso} & \textbf{Alcance} & \textbf{Justificación y condición de habilitación} \\
+\midrule
+M0 & Preparación & Proteger línea base, validar recursos, backup/restauración, red, secretos y variantes de gateway antes de abrir rutas. \\
+M1 & S2 auditoría & Registro paralelo sin intervenir la edición; habilitar después de deduplicar, recuperar pendientes y probar filtros. \\
+M2 & S1 búsqueda & Proyección reconstruible; abrir tras verificar autorización, reconciliación y actualización menor que 5 s. \\
+M3 & S3 exportación & Jobs y objetos con efectos en curso; abrir POST después de probar reserva recuperable, estado y descarga. \\
+M4 & S4 medios & Objetos potencialmente referenciados por contenido; exige retención y restauración antes de nuevas referencias. \\
+M5 & Consolidación & Cotejar despliegue, criterios globales, pruebas y reversión medida antes de la entrega final. \\
+\bottomrule
+\end{tabularx}
+\caption{Orden de migración de A5, de menor a mayor riesgo funcional, con preparación y consolidación.}
+\label{tab:a5-orden}
+\end{table}
+
+\clearpage
+\paragraph{M0: preparar sin alterar la línea base.}
+Guardar backup consistente de base, archivos, configuración y secretos
+necesarios para restaurar, fuera de Git y con acceso restringido. Probar la
+restauración en un entorno aislado. Verificar RAM del anfitrión, recursos
+de ambas VM, red privada, certificados y puertos; preparar límites,
+variantes de gateway y probes nativos antes de habilitar VM-2.
+\textbf{Hecho:} restauración evidenciada; login, creación de libro y edición
+intactos; red y restricciones comprobadas; presupuesto medido y entrada del
+puente persistida antes de 202, recuperable ante caída del broker.
+Responsable previsto: infraestructura, con revisión de otro integrante.
+
+\paragraph{M1: auditoría con S2.}
+Crear base y rol propios y consumidor durable independiente. Contrastar
+eventos aceptados con actividad nativa sin cambiar páginas.
+\textbf{Hecho:} filtros de A3 correctos; un efecto por \texttt{event\_id};
+S2 detenido dos minutos durante veinte ediciones recupera los veinte eventos
+publicados; un mensaje inválido conserva su causa en DLQ; el monolito sigue
+operativo. La prueba diferencia eventos aceptados de Webhooks que no
+llegaron al puente. Responsable: integración/eventos; CA-5/CA-6.
+
+\paragraph{M2: búsqueda con S1.}
+Crear índice y rol propios, establecer consumidor/cursor antes de cargar
+páginas y libros por API, conservar cambios concurrentes y reconciliar
+por entidad y revisión antes de publicar la búsqueda.
+\textbf{Hecho:} diez ediciones controladas aparecen cada una en menos de
+cinco segundos; creación, actualización y borrado son coherentes; la carga
+inicial con ediciones no pierde cambios; no hay contenido fuera del alcance
+autorizado; sin coincidencias se devuelve 200 vacío; S1 caído produce 503
+JSON mientras el monolito permanece disponible. Las diez ediciones son un
+ensayo propuesto, no otro umbral docente. Responsable: búsqueda.
+Referencias: CA-3/CA-5 y F6-E4/P36; rendimiento pendiente de Fase 7.
+
+\paragraph{M3: exportación con S3.}
+Preparar Redis persistente, worker, outbox y bucket; probar página/libro
+en PDF/Markdown antes de admitir solicitudes nuevas.
+\textbf{Hecho:} 202 con job consultable y archivo válido; idempotencia y 409
+con cuerpo distinto; Redis inaccesible antes de aceptar devuelve 503;
+worker interrumpido permite recuperar el mismo job sin bloqueo indefinido;
+fallo permanente queda registrado; URL firmada abre por el gateway y el
+outbox conserva publicaciones pendientes. Validar AOF y recuperación del
+volumen antes de atribuir durabilidad. Responsable: exportación/persistencia.
+Referencias: F6-E6/P38, F6-E7/P39 y F7-E3/P51.
+
+\paragraph{M4 y M5: medios y consolidación.}
+S4 se habilita después de probar original, miniatura proporcional, límites,
+metadatos, autorización, publicación recuperable y restauración aislada.
+Los objetos deben seguir accesibles tras reiniciar con el volumen; las
+cargas nativas se conservan. Responsable: medios/almacenamiento;
+referencia F6-E8/P40. M5 exige demostrar CA-1--CA-7, ejecutar las pruebas
+de Fases 6/7, cotejar diagramas y despliegue y medir la reversión antes de
+etiquetar la entrega. Estos pasos permanecen pendientes de ejecución.
+
+\clearpage
+\subsubsection{Reversión por ruta: objetivo menor que un minuto}
+
+Volver al monolito significa cerrar la entrada nueva y continuar por su
+función nativa, que nunca se elimina. Las respuestas y autenticación de
+\texttt{/v2/*} no equivalen a las de BookStack: no se redirige un POST a una
+API incompatible ni se presenta HTML como JSON de A3. El consumidor recibe
+503 JSON uniforme, correlación y un enlace alternativo; el usuario continúa
+con su sesión nativa autorizada.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.3cm} X X}
+\toprule
+\textbf{Selector} & \textbf{Acción y alternativa nativa} & \textbf{Conservación necesaria} \\
+\midrule
+\texttt{audit} & Retirar consulta afectada; abrir actividad nativa con sus permisos. & Conservar consumidor/base CNA: la actividad nativa no contiene necesariamente eventos exclusivos de servicios. \\
+\texttt{search} & Retirar GET nuevo; usar búsqueda nativa con término codificado. & Mantener consumidor e índice para corregir y reconciliar. \\
+\texttt{exports} & Bloquear nuevos POST; exportar desde página/libro nativos. & Mantener GET de jobs, workers recuperables y descargas de trabajos ya aceptados. \\
+\texttt{media} & Bloquear nuevos POST; usar editor y cargas nativas. & Mantener GET de metadatos, imágenes y miniaturas ya referenciadas. \\
+\bottomrule
+\end{tabularx}
+\caption{Reversión funcional por selector, sin eliminar datos ni simular compatibilidad entre APIs.}
+\label{tab:a5-alternativas}
+\end{table}
+
+Antes de habilitar rutas se prepararán dos variantes de Nginx por selector,
+\texttt{cna} y \texttt{native}, con un enlace activo por funcionalidad,
+backup conocido válido y bloqueo de cambios concurrentes. La variante
+nativa restringirá nuevas admisiones según la tabla y conservará el resto
+del gateway. Los archivos se implementarán en Fase 6: no existen como
+configuración instalada durante A5.
+
+Cada variante debe validarse en la configuración completa. El operador
+prepara acceso y probes autorizados antes de iniciar el reloj; conserva el
+destino previo, cambia el enlace de forma atómica, ejecuta
+\texttt{nginx -t} y solo si es correcto realiza
+\texttt{systemctl reload nginx}. Si la prueba falla, restaura el enlace
+previo sin recargar. Si falla la recarga o el comportamiento no cambia,
+restaura, valida y recarga la variante conocida válida, registrando fallo.
+No se detiene ni reinicia Nginx como mecanismo normal de reversión.
+
+\clearpage
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.5cm} X}
+\toprule
+\textbf{Presupuesto} & \textbf{Acción prevista} \\
+\midrule
+0--10 s & Capturar estado anterior y cambiar atómicamente el selector preparado. \\
+10--20 s & Validar configuración efectiva; si falla, restaurar y no recargar. \\
+20--30 s & Recargar sin detener servicio y comprobar cambio con conexiones nuevas. \\
+30--55 s & Verificar respuesta de la ruta retirada, operación nativa autorizada y lecturas previas que deban conservarse. Registrar fin. \\
+55--59 s & Margen operativo; completar en menos de 60 s. \\
+\bottomrule
+\end{tabularx}
+\caption{Presupuesto de tiempo de reversión. Es un objetivo de diseño, no una duración medida.}
+\label{tab:a5-tiempo}
+\end{table}
+
+La medición comienza al ordenar la reversión, con sesión y configuración
+preparadas, y termina al comprobar la ruta y la función nativa. El tiempo
+de detección previo se informa aparte. Enviar la señal de recarga no prueba
+que la nueva configuración atienda solicitudes: deben usarse conexiones
+nuevas. Login 200 tampoco demuestra una búsqueda, exportación o carga
+funcional; se realizará la acción equivalente con una sesión autorizada.
+
+\textbf{Aceptación:} registrar \(t_1-t_0<60\,s\) por selector, respuestas
+sanitizadas y operación nativa. Repetir el ensayo para cada funcionalidad.
+Si se excede el umbral, registrar incumplimiento y ajustar el procedimiento.
+No incluir instalaciones, backups completos ni creación de VM en esa ventana.
+El runbook detallado, incluido un ejemplo de comandos condicionado a tener
+los snippets preparados, está en \path{cna/docs/a5/reversion.md}.
+
+Cerrar POST no recupera un almacén caído ni traslada archivos a BookStack.
+Los GET previos solo podrán responder si sus dependencias están disponibles.
+Los jobs aceptados se drenan o recuperan; los buckets y eventos no se borran.
+La recuperación completa del índice, trabajos u objetos puede tardar más y
+se mide aparte. Si VM-1 o el gateway completos están caídos, este rollback
+no puede ejecutarse y no se le atribuye el objetivo de un minuto.
+
+\subsubsection{Evaluación de riesgos}
+
+La matriz comienza en la Tabla~\ref{tab:a5-riesgos}, dividida en partes,
+con cinco riesgos exigidos y ocho adicionales. Probabilidad e impacto se
+estiman de 1 a 3; P/I/R muestra ambos valores y su producto: 1--2 bajo,
+3--4 medio y 6--9 alto. El residual supone medidas aplicadas y verificadas;
+no es el riesgo actual ni una probabilidad estadística. Sus factores y estado
+se conservan en el CSV.
+
+R07 sigue alto sin recuperación validada del origen. R05 conserva impacto
+alto porque no se agrega alta disponibilidad al gateway.
+
+\input{../../../cna/docs/a5/matriz-riesgos.tex}
+
+\subsubsection{Evidencias, puertas de avance y cierre de Fase 5}
+
+Si un criterio de hecho falla, no se habilita el paso siguiente. Se registra
+la causa, se conserva el estado y se aplica la alternativa nativa. Una falla
+de autorización, corrupción, restauración o presión de recursos obliga a
+priorizar el monolito antes de reabrir servicios. Los cambios de topología,
+contrato o persistencia actualizan conjuntamente ADR, A3, A4 y este plan.
+
+La consigna no asigna F5-E8 ni una prueba P adicional a A5. Se conservan
+plan, runbook, matriz CSV y tabla generada, junto a una lista de evidencias
+para los ensayos futuros. No se inventa una captura ni una medición.
+La generación verifica escalas, productos, IDs y campos de los trece riesgos;
+no ejecuta operaciones sobre el servidor.
+
+Con A1--A5 queda documentado el diseño de Fase 5: análisis, decisiones,
+contratos, diagramas, orden de migración, reversión y riesgos. Quedan
+pendientes la implementación y las pruebas reales de Fases 6 y 7, incluida
+la comprobación de cada criterio global y del límite de reversión.

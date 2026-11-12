@@ -1,5 +1,7 @@
 # Evidencias de la Fase 5
 
+A5 conserva su [respaldo documental y lista de ensayos pendientes](a5/README.md): plan de migración, reversión y matriz de riesgos. La consigna no le asigna F5-E8 ni un identificador P adicional. El límite de reversión se verificará con mediciones reales durante la implementación.
+
 A4 conserva las evidencias de diseño F5-E5/P30, F5-E6/P31 y F5-E7/P32 en [a4/](a4/README.md). Incluye contexto C4, dos láminas complementarias del nivel 2 y tres secuencias con sus errores. Las fuentes y el script de generación están en [diagramas/a4/](../../diagramas/a4/README.md). Se distinguen los componentes existentes de la arquitectura objetivo; el renderizado no demuestra despliegue.
 
 La validación de A3 (F5-E4 / P29) está guardada en [a3/](a3/README.md), con resultados reales, versiones y hashes. Los contratos incluyen S1–S4, el puente y seis canales. La captura de terminal se guarda como `F5-E4-validacion-contratos.png` en esta carpeta y se incorpora automáticamente al compilar el informe.

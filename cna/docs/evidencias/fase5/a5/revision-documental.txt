@@ -1,0 +1,13 @@
+Revision documental A5 - 2026-11-12
+UTC: 2026-11-12T13:56:59.607036+00:00
+Nodo: SOFI_PORTATIL
+Matriz: 13 riesgos; IDs unicos y escalas/productos verificados por generar-matriz.py.
+PDF: 93 paginas; A5 en 86-93; sin referencias pendientes ni desbordamientos nuevos de A5.
+Revision visual: ocho paginas de A5 renderizadas e inspeccionadas.
+No se ejecuto rollback, migracion ni prueba de servicio. Tiempo real de reversion: pendiente.
+Fuentes SHA256:
+5ca42fc94922290de3c7c092715f551061a56188f4409fb10a2aa70d07f56dae  cna/docs/a5/generar-matriz.py
+ffaf5409548114ee7aadd486451689b0db3ffcc92b41aba0852e4fbfb5f1aba9  cna/docs/a5/matriz-riesgos.csv
+6676813a9b68becadbeec9aa7035f841bf671018f2c04425a49c1a683a36b65f  cna/docs/a5/matriz-riesgos.tex
+b28f514cb56846e2c69ea4b7e374253d043e7abb833d6456b997259ab76930f5  cna/docs/a5/plan-migracion.md
+53383c7a18a66ce2244c2fa825cb10d465aa078184eb244e03de8e9818ab3c14  cna/docs/a5/reversion.md
