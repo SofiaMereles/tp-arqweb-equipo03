@@ -1,0 +1,19 @@
+@startuml
+!include <C4/C4_Context>
+LAYOUT_TOP_DOWN()
+title F5-E5 / P30 - C4 nivel 1: contexto de BookStack CNA
+Person(editor, "Editor / lector", "Organiza, consulta y edita contenido autorizado.")
+Person(client, "Consumidor de API", "Busca, consulta auditoría, exporta y carga imágenes.")
+Person(operador, "Operador del laboratorio", "Administra nodos y consulta métricas, logs y trazas.")
+System(plataforma, "Plataforma BookStack CNA", "BookStack conserva contenido y permisos. Los servicios extraídos ofrecen búsqueda, auditoría, exportación y medios.")
+Rel(editor, plataforma, "Usa bookstack.local", "HTTPS / TCP 443")
+Rel(client, plataforma, "Usa api.bookstack.local/v2/*", "HTTPS / JSON o multipart / TCP 443")
+Rel(operador, plataforma, "Administra y observa por red privada", "SSH / TCP 22; paneles HTTP internos")
+note bottom of plataforma
+  Alcance: monolito, gateway, servicios, almacenes y observabilidad.
+  Despliegue asociado: VM-1 arqwebserver + VM-2 cna-node1 prevista.
+  El detalle de contenedores, nodos y puertos se abre en F5-E6.
+  Estado: diseño objetivo; solo el monolito base y SSH están verificados.
+end note
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,108 @@
+{
+  "evidence": [
+    "F5-E5/P30",
+    "F5-E6/P31",
+    "F5-E7/P32"
+  ],
+  "generated_at": "2026-11-12T11:47:21.4372498Z",
+  "host": "SOFI_PORTATIL",
+  "status": "PASS",
+  "scope": "Sintaxis, renderizado y archivos de diseno; no verifica servicios desplegados.",
+  "plantuml": "1.2025.10",
+  "plantuml_jar_sha256": "4a01ea09b317180fb8e7eef712dfdca725409d2ee1919e4b5adfe9d8362b6fe5",
+  "runtime": "PlantUML version 1.2025.10 (Tue Nov 04 14:20:49 PYT 2025)\r\n(GPL source distribution)\r\nJava Runtime: OpenJDK Runtime Environment\r\nJVM: OpenJDK 64-Bit Server VM\r\nDefault Encoding: Cp1252\r\nLanguage: es\r\nCountry: PY\r\n \r\nPLANTUML_LIMIT_SIZE: 12000\r\n\r\nDot version: dot - graphviz version 2.44.1 (20200629.0846)\r\nInstallation seems OK. File generation OK",
+  "source_count": 6,
+  "rendered_sheets": 8,
+  "sources": [
+    {
+      "file": "F5-E5-c4-contexto.puml",
+      "sha256": "5177c6262d59f52c6a47af8cdca68c0682faed4c8e764f5b848cc00a09570084"
+    },
+    {
+      "file": "F5-E6-01-c4-contenedores.puml",
+      "sha256": "cf55812a75bb13534ac0a52bf9241f25dd2822e4e11909061d0aa1c027b3cee8"
+    },
+    {
+      "file": "F5-E6-02-c4-operacion.puml",
+      "sha256": "8fa81a0ca333a9c691ddb5c7a8d3d8a0278b7faddfba70775163f8a6161f7b08"
+    },
+    {
+      "file": "F5-E7-01-edicion-indexacion.puml",
+      "sha256": "820efb0b4b4ba35887cead11e982a83b34f671117301140c9241225f16cb51d8"
+    },
+    {
+      "file": "F5-E7-02-busqueda.puml",
+      "sha256": "d14c945fd6aed4d65aff92fc775036b3c0ccf079179a1ed67954003f326c47de"
+    },
+    {
+      "file": "F5-E7-03-exportacion.puml",
+      "sha256": "f1b301f75e35ff8f68d44ebd133b2d0cfca219b62575160c7153faf07d013060"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "F5-E5-c4-contexto.png",
+      "sha256": "aa1b5fc7edccf830064f5fbbf230b94ddad5f0b597293dae54ce84b84b96e8fe"
+    },
+    {
+      "file": "F5-E5-c4-contexto.svg",
+      "sha256": "8002bbc876c248d4712ede8c659ef1849fadac0ca5faa4ff5a7734f9a392f1bd"
+    },
+    {
+      "file": "F5-E6-01-c4-contenedores.png",
+      "sha256": "a59867b84c8f092ebcdeb5c2948f6718071974a397af71754104feb55ee9ef18"
+    },
+    {
+      "file": "F5-E6-01-c4-contenedores.svg",
+      "sha256": "273c17ea6ff6487e7e2c409bb80eb758e98f7e9cfcdb6057c7254d977a508cce"
+    },
+    {
+      "file": "F5-E6-02-c4-operacion.png",
+      "sha256": "30dfd2b430c8aae643b12b5e9042b8cd65702b223240596adc1033799c2b76db"
+    },
+    {
+      "file": "F5-E6-02-c4-operacion.svg",
+      "sha256": "3af3bff5ef1b52d8bb5a66dd56c4d0315cc5c6a5fc7b70859e873367f2966d5e"
+    },
+    {
+      "file": "F5-E7-01-edicion-indexacion.png",
+      "sha256": "37f6dba659026fdeee2a70c8a67199d7258510b1b63adbd72c14814a4c699be9"
+    },
+    {
+      "file": "F5-E7-01-edicion-indexacion.svg",
+      "sha256": "5b796d3ffec0218fc359ef94c1925eafbe57a2e3eea51d1880389a41aeb85ea8"
+    },
+    {
+      "file": "F5-E7-01-edicion-indexacion_001.png",
+      "sha256": "d0c1e9548f1554c133f6723ce1fc289508c0df06b239738e54fd8a9ea86278fc"
+    },
+    {
+      "file": "F5-E7-01-edicion-indexacion_001.svg",
+      "sha256": "8eb48bd13a36ecd120754f9897703e4bf789233e00c091361092b69bdeaa7fe7"
+    },
+    {
+      "file": "F5-E7-02-busqueda.png",
+      "sha256": "6f69b4021e49319597944707d6f143e898e4305ce3203dd8bfdcc46273b43880"
+    },
+    {
+      "file": "F5-E7-02-busqueda.svg",
+      "sha256": "71eb039f8b0818761abfab0e1202aa565e2bb479464a6ce277b46182bd32a348"
+    },
+    {
+      "file": "F5-E7-03-exportacion.png",
+      "sha256": "e8a867f7ad79c53e6fcbd2030cc3ead302fb796f83ff941ab804a47b470636a6"
+    },
+    {
+      "file": "F5-E7-03-exportacion.svg",
+      "sha256": "aec01d8882becc8c9d1ea28f32e473f83fea1e72fd7c64e9a3b902021817c04f"
+    },
+    {
+      "file": "F5-E7-03-exportacion_001.png",
+      "sha256": "9d9a18690f381d3d2ceac90cb587c2bb7b82b54207400cdb003eaff2281a0457"
+    },
+    {
+      "file": "F5-E7-03-exportacion_001.svg",
+      "sha256": "1498ba37e8a6655a808a680f0543f5c42da7af0169e560062b9f74028bd74bc3"
+    }
+  ]
+}

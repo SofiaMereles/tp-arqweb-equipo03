@@ -5,9 +5,11 @@
 # Mantener portables los scripts y estables los contratos validados.
 *.sh text eol=lf
 *.mjs text eol=lf
+*.puml text eol=lf
 *.yaml text eol=lf
 
 # Evidencias originales: preservar sus bytes y hashes.
 cna/docs/evidencias/fase5/relevamiento/*.txt -text
 cna/docs/evidencias/fase5/relevamiento/*.tsv -text
 cna/docs/evidencias/fase5/a3/webhook-source.txt -text
+cna/docs/evidencias/fase5/a4/*.svg -text

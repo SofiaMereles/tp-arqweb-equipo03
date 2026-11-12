@@ -1,0 +1,93 @@
+@startuml
+title F5-E7 / P32 - Secuencia 1: edición, índice y auditoría (1/2)
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 155
+skinparam ParticipantPadding 12
+skinparam BoxPadding 8
+actor Editor as U
+participant "Gateway\nVM-1" as G
+participant "BookStack\nVM-1" as B
+participant "event-bridge\nVM-2" as E
+database "PostgreSQL\nbridge_db / search_db / audit_db" as D
+queue "NATS\nJetStream" as N
+participant "S1\nBúsqueda" as S
+participant "S2\nAuditoría" as A
+U -> G: Editar página (HTTPS 443)
+G -> B: Edición por FastCGI\nX-Request-ID=r
+B -> B: Autorizar y guardar en MariaDB local
+B --> U: Edición confirmada por el gateway
+B -> E: POST Webhook page_update\nHTTP privado 8085 -> 8000 + token
+note over B,E
+El Webhook instalado no propaga r automáticamente.
+Propagación vía instrumentación externa pendiente;
+si falta, el puente genera otro request_id.
+end note
+E -> D: TX bridge_db: inbox + UUID + outbox\ndeduplicación por huella
+D --> E: COMMIT
+E --> B: 202: entrada persistida
+E -> N: bookstack.page.updated\nevent_id=e, version=1.0, request_id
+N --> E: PubAck durable
+E -> D: Marcar outbox enviado
+par Consumidor durable de búsqueda
+  N -> S: Entregar evento e
+  S -> G: GET /api/pages/{id}\nHTTPS 443 + token + request_id
+  G -> B: API por FastCGI
+  B --> S: 200 contenido autorizado (vía gateway)
+  S -> D: TX search_db: versión + índice\ny evento e aplicado
+  D --> S: COMMIT
+  S -> N: ACK después del commit
+else Consumidor durable de auditoría
+  N -> A: Entregar el mismo evento e
+  A -> D: TX audit_db: insertar e\nUNIQUE(event_id)
+  D --> A: COMMIT
+  A -> N: ACK después del commit
+end
+note over S,A
+Cada servicio usa solo su base y su rol.
+Mismo evento, dos efectos independientes.
+Objetivo de indexación <5 s: medir en Fase 6/7.
+end note
+newpage Errores, reentrega y límites del tramo de origen (2/2)
+alt Token o cuerpo inválido en el puente
+  B -> E: Webhook inválido
+  E --> B: 401 o 400; no se acepta la entrada
+else PostgreSQL del puente no disponible
+  E -> D: Intentar persistir inbox/outbox
+  D --> E: Error / rollback
+  E --> B: 503 JSON; no emitir 202
+else Broker caído tras aceptar la entrada
+  E -> N: Intentar publicar e
+  N --> E: Sin PubAck / timeout
+  E -> D: Conservar outbox pendiente
+  ... vuelve el broker ...
+  E -> N: Reintentar e con el mismo event_id
+  N --> E: PubAck; luego marcar enviado
+end
+alt S1 no obtiene contenido por timeout / 503
+  N -> S: Entregar e
+  S -> G: GET página con timeout
+  G --> S: Timeout / 503; circuito tras fallos
+  S -> N: No confirmar; reintento con backoff y jitter
+  note over S,N
+  Hasta cinco intentos por consumidor.
+  401/403 no se interpretan como borrado.
+  Esquema inválido o intentos agotados:
+  transferir original + causa a DLQ durable.
+  end note
+  S -> N: Publicar DLQ con clave (consumer,e)
+  N --> S: Confirmación de persistencia DLQ
+  S -> N: Terminar / confirmar original
+else S2 detenido o ACK perdido
+  N -> A: Retener / reentregar e al volver
+  A -> D: Insertar e en audit_db
+  D --> A: COMMIT o e ya existe
+  A -> N: ACK; sin duplicar efecto
+end
+note over B,E
+Límite real: si el Webhook nunca llega, el código relevado
+registra el fallo sin reprogramar ese envío. La edición
+ya guardada no se revierte. Recuperación de origen pendiente;
+reconciliar índice por API no reconstruye toda la auditoría.
+end note
+@enduml

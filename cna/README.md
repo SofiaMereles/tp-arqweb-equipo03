@@ -1,6 +1,6 @@
 # TP Integrador II: evolución de BookStack
 
-Continuación del TP I. Estado: Fase 5 A1, A2 y A3 documentados, con contratos validados y evidencias guardadas. A4 y A5 están pendientes; todavía no hay servicios implementados ni despliegue reproducible.
+Continuación del TP I. Estado: Fase 5 A1, A2, A3 y A4 documentados, con contratos validados y evidencias de diseño guardadas. A5 está pendiente; todavía no hay servicios implementados ni despliegue reproducible.
 
 ## Orden de trabajo
 
@@ -32,5 +32,9 @@ Consultar el [registro de evidencias](docs/evidencias/README.md) para guardar ca
 ## Contratos de A3
 
 Los contratos OpenAPI 3.1 de S1–S4 y del puente y el AsyncAPI 3.0 están en [contracts/](contracts/README.md). Desde esa carpeta, `pnpm install --frozen-lockfile --ignore-scripts` instala los validadores y `pnpm run validate` verifica especificaciones, ejemplos y reglas de aceptación. El resumen y los hashes quedan guardados como F5-E4 / P29.
+
+## Diagramas de A4
+
+El [modelo C4 y las tres secuencias](docs/diagramas/a4/README.md) tienen fuentes PlantUML editables, PNG para el informe y SVG para ampliar. Se incluyen nodos, puertos y caminos de error, distinguiendo lo existente del diseño objetivo. Las evidencias F5-E5–F5-E7 y su registro de renderizado están en `docs/evidencias/fase5/a4/`. La coherencia con el despliegue efectivo se revisará en Fase 6.
 
 Al implementar se incorporarán `services/`, `deploy/` y `observability/`. Los contratos ya están en `contracts/`; los diagramas, decisiones y análisis se conservan en `docs/`.

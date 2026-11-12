@@ -1,0 +1,89 @@
+@startuml
+title F5-E7 / P32 - Secuencia 3: exportación asíncrona por jobs (1/2)
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 145
+skinparam ParticipantPadding 10
+actor Cliente as C
+participant "Gateway\nVM-1" as G
+participant "S3 API\nVM-2" as S
+database "Redis\nJobs + outbox" as R
+participant "S3 worker\n1 a 3 réplicas" as W
+participant "BookStack\nVM-1" as B
+database "MinIO\nbucket exports" as M
+queue "NATS\nJetStream" as N
+C -> G: POST /v2/exports\n{page_id:42,format:pdf}\nIdempotency-Key=k + X-API-Key
+G -> S: HTTP privado 8083 -> 8000\nX-Request-ID=r
+S -> S: Validar y autorizar origen\nUna página o libro, no ambos
+S -> R: Atómico: k -> job_id, queued,\ncola y outbox export.requested
+R --> S: Guardado según política AOF
+S --> G: 202 + job_id + Location
+G --> C: 202 + job_id + X-Request-ID
+S -> N: Publicador outbox: export.requested
+N --> S: PubAck; marcar publicación
+W -> R: Reservar job con vencimiento\nqueued -> running
+R --> W: Job y request_id=r
+W -> G: GET exportación API BookStack\nHTTPS 443 + token + r
+G -> B: /api/pages/42/export/pdf\nFastCGI local
+B --> W: 200 archivo (vía gateway)
+W -> M: PUT exports/{job_id}.pdf\nS3 HTTP 9000; clave estable
+M --> W: Objeto confirmado
+W -> R: Atómico: done + metadatos\ny outbox export.completed
+W -> N: Publicador outbox: export.completed
+N --> W: PubAck; marcar publicación
+note over R,N
+Redis contiene la cola ejecutable. Los eventos de NATS
+son hechos para auditoría, no otra cola de workers.
+S2 consume y deduplica ambos eventos como en secuencia 1.
+end note
+C -> G: GET /v2/exports/{job_id}
+G -> S: Consultar estado
+S -> R: Leer job autorizado
+R --> S: done + clave del objeto
+S --> C: Vía gateway: 200 done + URL firmada\ny vencimiento (firma S3 sin exponer secretos)
+C -> G: GET /objects/exports/{job_id}.pdf?firma
+G -> M: S3 HTTP 9000; Host/URI coherentes con firma
+M --> C: Archivo vía gateway HTTPS 443
+newpage Errores, idempotencia y recuperación del worker (2/2)
+alt Pedido inválido / clave reutilizada con otro cuerpo
+  C -> S: Entrada inválida vía gateway
+  S --> C: 400 / 409 JSON vía gateway
+else Repetición de k con mismo cuerpo
+  S -> R: Buscar k
+  R --> S: Mismo job_id y estado actual
+  S --> C: 202; no encolar otro job
+else Redis inaccesible antes de aceptar
+  S -> R: Intentar crear job
+  R --> S: Error
+  S --> C: 503 JSON vía gateway; no emitir 202
+end
+alt Timeout / 503 en BookStack o error al guardar en MinIO
+  W -> W: Reintento acotado + backoff\nrenovar reserva mientras trabaja
+  alt Recuperación dentro del límite
+    W -> M: Reintentar clave estable del job
+    W -> R: Guardar done una sola vez
+  else Fallo permanente o intentos agotados
+    W -> R: failed + causa; liberar reserva
+    C -> S: GET estado vía gateway
+    S --> C: 200 state=failed + error\n404 solo si job no existe / no es visible
+  end
+else Worker cae estando running
+  ... vence reserva; otro worker recupera pendientes ...
+  W -> R: Recuperar el mismo job_id
+  W -> M: Repetir PUT idempotente si hace falta
+  W -> R: done + outbox atómicos
+end
+alt NATS caído al publicar el resultado
+  W -> R: Mantener outbox pendiente
+  ... NATS vuelve ...
+  W -> N: Reintentar mismo event_id
+  N --> W: PubAck antes de marcar enviado
+end
+note over C,N
+Si el origen no existe y se detecta antes de aceptar: 404.
+Si se detecta en worker: job failed, consultable con 200.
+Si expira la URL, consultar done renueva la firma mientras exista
+el objeto. Redis AOF y volumen no implican pérdida cero:
+durabilidad y recuperación se medirán en Fase 6/7.
+end note
+@enduml

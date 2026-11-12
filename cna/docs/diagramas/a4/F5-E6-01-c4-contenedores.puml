@@ -1,0 +1,53 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_TOP_DOWN()
+skinparam nodesep 35
+skinparam ranksep 45
+title F5-E6 / P31 - C4 nivel 2: aplicaciones y persistencia (lámina 1 de 2)
+Person(cliente, "Usuario / cliente", "Navegador o consumidor autorizado.")
+System_Boundary(sistema, "Plataforma BookStack CNA - arquitectura objetivo") {
+  Boundary(vm1, "VM-1 arqwebserver | 2 vCPU / 4 GB | existente", "Nodo VMware / manager Swarm drain previsto") {
+    Container(gw, "Gateway", "Nginx / TLS 1.3", "bookstack.local y api.bookstack.local; /v2/*; /objects/*; request_id, límites y 503 JSON.")
+    Container(bs, "BookStack", "PHP 8.5-FPM / Laravel", "Contenido y permisos; REST y Webhooks; código del monolito sin modificar.")
+    ContainerDb(maria, "MariaDB", "bookstack_db", "Datos originales. Acceso exclusivo del monolito.")
+  }
+  Boundary(vm2, "VM-2 cna-node1 | 2 vCPU / 4 GB | prevista", "Worker Swarm; IP privada por asignar") {
+    Container(s1, "S1 search-svc", "API HTTP + consumidor durable", "Consulta índice autorizado, reindexa por API. Puerto interno 8000.")
+    Container(s2, "S2 audit-svc", "API HTTP + consumidor durable", "Eventos idempotentes y filtros. Puerto interno 8000.")
+    Container(s3, "S3 export-svc", "API HTTP + publicador outbox", "Crea jobs y consulta estados. Puerto interno 8000.")
+    Container(worker, "S3 export-worker", "Proceso de trabajo / 1 a 3 réplicas", "Reserva recuperable, exporta por API y guarda resultado.")
+    Container(s4, "S4 media-svc", "API HTTP + miniaturas", "Original y miniatura; media.uploaded. Puerto interno 8000.")
+    Container(bridge, "event-bridge", "HTTP + publicador outbox", "Valida token, normaliza y persiste antes de 202. Puerto interno 8000.")
+    ContainerDb(pg, "PostgreSQL", "Instancia / TCP 5432", "search_db, audit_db, bridge_db; roles aislados; volumen local.")
+    ContainerQueue(nats, "NATS JetStream", "Eventos durables / TCP 4222", "Páginas, exportación, medios y DLQ; ack explícito; volumen local.")
+    ContainerDb(redis, "Redis", "Jobs S3 / RESP TCP 6379", "Estado, cola recuperable y outbox; AOF y volumen local.")
+    ContainerDb(minio, "MinIO", "S3 HTTP / TCP 9000", "Buckets exports y media; políticas distintas; volumen local.")
+  }
+}
+Rel(cliente, gw, "Web, API y descarga firmada", "HTTPS / TCP 443")
+Rel(gw, bs, "Web y /api/*", "FastCGI / socket Unix local")
+Rel(bs, maria, "Lee/escribe contenido y permisos", "SQL local / TCP 3306 o socket; verificar F6")
+Rel(gw, s1, "/v2/search", "HTTP 8081 -> 8000 privado")
+Rel(gw, s2, "/v2/audit", "HTTP 8082 -> 8000 privado")
+Rel(gw, s3, "/v2/exports", "HTTP 8083 -> 8000 privado")
+Rel(gw, s4, "/v2/media", "HTTP 8084 -> 8000 privado")
+Rel(bs, bridge, "page_create/update/delete + token", "HTTP 8085 -> 8000 privado")
+Rel(bridge, pg, "Inbox / outbox", "SQL / TCP 5432; bridge_db")
+Rel(bridge, nats, "Publica tras persistir; espera PubAck", "NATS / TCP 4222")
+Rel(nats, s1, "Eventos de páginas; durable propio", "NATS pull / TCP 4222")
+Rel(nats, s2, "Seis canales; durable propio", "NATS pull / TCP 4222")
+Rel(s1, pg, "Índice y deduplicación", "SQL / TCP 5432; search_db")
+Rel(s2, pg, "Registro y deduplicación", "SQL / TCP 5432; audit_db")
+Rel(s1, gw, "GET /api/pages/{id}; /api/books", "HTTPS / TCP 443 + token BookStack")
+Rel(worker, gw, "GET exportación /api/*", "HTTPS / TCP 443 + token BookStack")
+Rel(s3, redis, "Job + cola + outbox atómicos", "RESP / TCP 6379")
+Rel(worker, redis, "Reserva, renovación y estado", "RESP / TCP 6379")
+Rel(s3, nats, "export.requested; outbox S3", "NATS / TCP 4222")
+Rel(worker, nats, "export.completed; outbox S3", "NATS / TCP 4222")
+Rel(worker, minio, "PUT idempotente por job_id", "S3 HTTP / TCP 9000")
+Rel(s4, minio, "Original, miniatura y publicación recuperable", "S3 HTTP / TCP 9000")
+Rel(s4, nats, "media.uploaded", "NATS / TCP 4222")
+Rel(gw, minio, "/objects/*: Host y URI firmados coherentes", "S3 HTTP / TCP 9000 privado")
+footer ens37 VM-1: 192.168.145.129; ens33: DHCP variable. VM-2: IP privada pendiente.\n8081-8085: publicación mode=host privada prevista. Almacenes sin acceso público ni acceso de servicios a MariaDB.\nSwarm interno: 2377/TCP, 7946/TCP+UDP, 4789/UDP. Volúmenes fijados a VM-2; observabilidad en lámina 2.
+SHOW_LEGEND()
+@enduml

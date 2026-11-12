@@ -1,0 +1,41 @@
+@startuml
+!include <C4/C4_Container>
+LAYOUT_LEFT_RIGHT()
+title F5-E6 / P31 - C4 nivel 2: operación y observabilidad (lámina 2 de 2)
+Person(operador, "Operador", "Accede por red Solo host; paneles no públicos.")
+System_Boundary(sistema, "Misma plataforma BookStack CNA - vista complementaria") {
+  Boundary(vm1, "VM-1 arqwebserver | existente", "Manager Swarm drain previsto") {
+    Container(gw, "Gateway Nginx", "HTTPS / TCP 443", "Mismo gateway que en lámina 1; logs con request_id y métricas internas.")
+    Container(bs, "BookStack", "PHP-FPM / Laravel", "Instrumentación de contexto pendiente, sin cambios al código del monolito.")
+    Container(agente, "Agente de telemetría VM-1", "Collector / receptor de archivos", "Lee logs locales de Nginx; exporta logs y contexto disponible sin publicar paneles.")
+  }
+  Boundary(vm2, "VM-2 cna-node1 | prevista", "Worker Swarm; capacidad a medir") {
+    Container(servicios, "S1-S4, export-worker y event-bridge", "Referencia a contenedores de lámina 1", "No es otro contenedor: agrupa solo sus conexiones de telemetría.")
+    ContainerQueue(nats, "NATS JetStream", "Mismo broker de lámina 1", "Monitoreo HTTP 8222; /jsz; pendientes y DLQ.")
+    Container(prom, "Prometheus", "HTTP / TCP 9090", "Métricas RED, colas y reglas de alerta; volumen local.")
+    Container(grafana, "Grafana", "HTTP / TCP 3000", "Tableros de métricas y consulta de logs; volumen local.")
+    Container(otel, "OpenTelemetry Collector", "OTLP / TCP 4317 o 4318", "Recibe logs/trazas y los exporta; receptor de logs de contenedores y gateway.")
+    Container(loki, "Loki", "HTTP / TCP 3100", "Logs consultables por request_id; volumen local.")
+    Container(jaeger, "Jaeger", "OTLP 4317; UI HTTP 16686", "Traza y duración de los saltos; retención acotada.")
+    Container(exporter, "Exporters de Nginx y NATS", "HTTP interno / TCP 9113 y 7777", "Traducen estado y métricas de Nginx/NATS a Prometheus.")
+  }
+}
+Rel(operador, vm1, "Operación VM-1", "SSH / TCP 22 privado")
+Rel(operador, vm2, "Operación VM-2", "SSH / TCP 22 privado")
+Rel(operador, grafana, "Tableros y logs", "HTTP / TCP 3000 privado")
+Rel(operador, jaeger, "Consulta trazas", "HTTP / TCP 16686 privado")
+Rel(prom, servicios, "Scrape /metrics", "HTTP / TCP 8000 en overlay")
+Rel(exporter, gw, "stub_status restringido", "HTTP / TCP 8080 privado previsto")
+Rel(exporter, nats, "Lee monitoreo /jsz", "HTTP / TCP 8222 interno")
+Rel(prom, exporter, "Scrape de exporters", "HTTP / TCP 9113 y 7777 interno")
+Rel(grafana, prom, "Consulta métricas y alertas", "HTTP / TCP 9090 interno")
+Rel(grafana, loki, "Consulta logs", "HTTP / TCP 3100 interno")
+Rel(servicios, otel, "Logs y trazas con request_id / traceparent", "OTLP HTTP / TCP 4318 interno")
+Rel(gw, agente, "Logs con request_id", "Archivos locales; no implica OTLP nativo en Nginx")
+Rel(bs, agente, "Contexto de Webhook: instrumentación a verificar", "Auto-instrumentación PHP / configuración prevista")
+Rel(agente, otel, "Exporta telemetría disponible", "OTLP HTTP / TCP 4318 privado previsto")
+Rel(otel, loki, "Exporta logs", "OTLP HTTP / TCP 3100 interno")
+Rel(otel, jaeger, "Exporta trazas", "OTLP gRPC / TCP 4317 interno")
+footer Los nombres repetidos son los mismos contenedores de la lámina 1. El agrupador S1-S4 solo resume sus enlaces de telemetría.\nUn manager, un broker y volúmenes locales: no es alta disponibilidad. Componentes nuevos previstos, no desplegados.\nMedir RAM y fijar límites antes de habilitar VM-2; la asignación de 4 GB no garantiza capacidad.
+SHOW_LEGEND()
+@enduml

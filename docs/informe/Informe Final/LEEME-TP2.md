@@ -1,6 +1,6 @@
-# Informe integrado hasta Fase 5 A3
+# Informe integrado hasta Fase 5 A4
 
-El archivo raíz es `main.tex`. A1 está en `fase5-a1.tex` y A2 en `fase5-a2.tex`, incorporados con `\input` antes de `\end{document}`. Se conservan los paquetes, estilos y colores del preámbulo original. La Fase 5 continúa como sección 10 y usa la numeración automática de figuras y tablas. Los enlaces del índice y las referencias se producen con el `hyperref` existente.
+El archivo raíz es `main.tex`. A1–A4 están en `fase5-a1.tex` a `fase5-a4.tex`, incorporados con `\input` antes de `\end{document}`. Se conservan los estilos y colores del preámbulo original; A4 añade `lscape` para las láminas horizontales de nivel 2. La Fase 5 continúa como sección 10 y usa numeración automática de figuras y tablas. El índice y las referencias usan `hyperref`.
 
 La portada identifica TP I y II y la fecha de noviembre de 2026. La conclusión histórica lleva el título «Conclusión del TP Integrador I». A1 incluye los seis módulos, las 41 tablas del inventario, una matriz de 6 × 17 tablas principales, el análisis de acoplamientos y los mapas DDD actual y de integración. P26, P27 y P28 figuran completados.
 
@@ -70,3 +70,7 @@ ADR-006 a ADR-010 están aceptados por el equipo para el diseño y documentados 
 ## Contratos A3
 
 El archivo `fase5-a3.tex` incorpora los cinco OpenAPI 3.1, los seis canales AsyncAPI 3.0, el sobre, el versionado y la validación F5-E4 / P29. La ejecución guardada verificó 242 ejemplos y nueve rechazos esperados sin errores. Los resultados están en `cna/docs/evidencias/fase5/a3/`. La captura `F5-E4-validacion-contratos.png` se incluye automáticamente cuando se guarda en la carpeta de evidencias de Fase 5. El refinamiento de A3 agrega inbox/outbox del puente y su base lógica a ADR-007 y ADR-009.
+
+## Modelo y secuencias A4
+
+`fase5-a4.tex` incorpora contexto C4, nivel 2 en dos vistas complementarias y tres secuencias con alternativas de error. Edición y exportación tienen dos láminas cada una. Las fuentes y el script reproducible están en `cna/docs/diagramas/a4/`; los PNG, SVG y reportes con hashes, en `cna/docs/evidencias/fase5/a4/`. Los SVG son útiles para ampliar los diagramas densos. Se documenta la arquitectura objetivo y se mantiene la Figura 1 como línea base; no se declara desplegada la extensión CNA. Después de modificar un `.puml`, ejecutar `renderizar.ps1`, compilar el informe y revisar las páginas afectadas.

@@ -1,0 +1,47 @@
+@startuml
+title F5-E7 / P32 - Secuencia 2: búsqueda síncrona y errores
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 220
+actor "Cliente autorizado" as C
+participant "Gateway Nginx\nVM-1" as G
+participant "S1 search-svc\nVM-2" as S
+database "PostgreSQL\nsearch_db" as D
+C -> G: GET https://api.bookstack.local/v2/search?q=nginx\nHTTPS 443 + X-API-Key
+G -> G: Generar / propagar X-Request-ID\nAplicar rate limiting
+alt Límite de solicitudes superado
+  G --> C: 429 JSON + request_id
+else Admitida
+  G -> S: GET /v2/search?q=nginx\nHTTP privado 8081 -> 8000 + request_id
+  alt S1 detenido / timeout del upstream
+    G --> C: 503 JSON uniforme + request_id\nNo devolver HTML de error del proxy
+  else S1 responde
+    S -> S: Validar clave, alcance autorizado\ny q, limit, offset
+    alt Credencial ausente / inválida o sin permiso
+      S --> G: 401 / 403 JSON
+      G --> C: Mismo código + X-Request-ID
+    else Entrada inválida (p.ej. q vacío)
+      S --> G: 400 JSON
+      G --> C: 400 JSON + X-Request-ID
+    else Consulta válida
+      S -> D: FTS sobre proyección autorizada\nSQL / TCP 5432, rol search_db
+      alt Base no disponible / timeout
+        D --> S: Error
+        S --> G: 503 Error{code,message,request_id}
+        G --> C: 503 JSON + X-Request-ID
+      else Consulta correcta
+        D --> S: Libros / páginas y puntajes
+        S --> G: 200 JSON: hits, total, limit, offset
+        G --> C: 200 + enlaces a bookstack.local
+        note over C,D
+        Sin coincidencias: 200 con hits=[]; no 404.
+        La búsqueda lee su índice; no consulta MariaDB.
+        El índice puede estar atrasado por consistencia eventual.
+        No se presupone autorización individual por usuario:
+        se limita al contenido compartido autorizado del laboratorio.
+        end note
+      end
+    end
+  end
+end
+@enduml

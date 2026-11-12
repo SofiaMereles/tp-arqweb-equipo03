@@ -1,0 +1,7 @@
+A4 - F5-E5/P30, F5-E6/P31, F5-E7/P32: PASS
+Fecha UTC: 2026-11-12T11:47:21.4372498Z
+Nodo: SOFI_PORTATIL
+PlantUML 1.2025.10; C4-PlantUML incluido en el JAR.
+6 fuentes; 8 laminas PNG y 8 SVG; sintaxis correcta y SVG parseables.
+L1: contexto. L2: aplicaciones/datos y operacion. Secuencias: edicion, busqueda, exportacion.
+Diseno objetivo: la validacion no constituye una prueba de despliegue ni de ejecucion de los flujos.
