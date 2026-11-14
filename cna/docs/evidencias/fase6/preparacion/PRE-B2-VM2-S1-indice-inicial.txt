@@ -1,0 +1,28 @@
+Fuente: salida aportada por el integrante desde arqweb@cna-node1.
+Comando: sudo bash ~/tp2-b2-s1/cna/deploy/b2-search/evidencia-worker.sh 3
+
+/healthz: {"status":"ok","service":"search-svc"}
+/readyz: 200; PostgreSQL, NATS, BookStack y carga inicial listos.
+Catalogo REST e indice coinciden: {'page': 1, 'book': 2}
+{
+  "query": "alfa",
+  "total": 1,
+  "limit": 20,
+  "offset": 0,
+  "items": [{
+    "entity_type": "page", "entity_id": 3,
+    "title": "Prueba de búsqueda CNA",
+    "url": "https://bookstack.local/books/pruebas-cna/page/prueba-de-busqueda-cna",
+    "score": 0.4000000059604645,
+    "highlights": {
+      "title": "Prueba de búsqueda CNA",
+      "body": "para el TP II. La frase de control inicial es: integrador nube <mark>alfa</mark>.",
+      "book_title": "Pruebas CNA"
+    },
+    "book": {"id": 2, "title": "Pruebas CNA"}
+  }]
+}
+Busqueda por tipo book: OK
+Metricas Prometheus y X-Request-ID: OK
+PASS: carga inicial completa, pagina encontrada, resaltado seguro y enlace nativo.
+Pendiente F6-E4: edicion real, actualizacion por evento y consulta via gateway.

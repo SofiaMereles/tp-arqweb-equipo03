@@ -1,0 +1,21 @@
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+Comando: sudo bash ~/tp2-b2-s1/cna/deploy/b2-search/desplegar-manager.sh
+
+Paso: conexion administrativa a PostgreSQL
+Paso: verificar o crear search_owner y search_db
+Paso: permisos del esquema search_db
+Paso: conexion valida como search_owner a search_db
+Paso: rechazo esperado de search_owner al conectar a audit_db
+Rechazo de CONNECT a audit_db confirmado.
+PASS: search_db y search_owner listos; rol sin privilegios administrativos.
+Aislamiento: search_owner no conecta a audit_db; audit_owner no tiene CONNECT a search_db.
+No se modificaron registros de auditoria ni datos de BookStack.
+
+S1 enviado a VM-2; no se publicaron puertos externos.
+cna_audit     1/1  cna-audit-svc:1.0.0-87c76ad-db4af96523a3
+cna_nats      1/1  nats:2.11.8-alpine
+cna_postgres  1/1  postgres:17.6-alpine
+cna_search    0/1  cna-search-svc:1.0.0-87c76ad-277ad9eb91f4
+
+El estado de S1 se tomo inmediatamente despues de solicitar el despliegue.
+Preparacion de base aprobada; arranque, disponibilidad e indice de S1 pendientes.

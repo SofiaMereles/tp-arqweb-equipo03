@@ -1,0 +1,31 @@
+Fuente: salida y captura aportadas por el integrante desde arqweb@cna-node1.
+Comando: sudo bash ~/tp2-b2/cna/deploy/b2-audit/evidencia-worker.sh
+Fecha de ejecución informada: 2026-11-13T03:48:28.603838+00:00
+
+F6-E5 / P37 - audit-svc
+Evento de prueba controlado; no es una edición real del monolito.
+event_id: 38213507-ee9d-4c9b-8ed8-e901cd1b62e6
+JetStream: dos publicaciones confirmadas, secuencias 1 y 2
+Ambos mensajes procesados por el consumidor durable.
+{
+  "total": 1,
+  "limit": 20,
+  "offset": 0,
+  "items": [
+    {
+      "event_id": "38213507-ee9d-4c9b-8ed8-e901cd1b62e6",
+      "type": "bookstack.page.updated",
+      "occurred_at": "2026-11-13T03:48:25.609034+00:00",
+      "recorded_at": "2026-11-13T03:48:28.391988+00:00",
+      "request_id": "F6-E5-a36c5ecf945f42b5b5358dc03fc0cabc",
+      "actor": {"id": null, "name": "Prueba controlada F6-E5"},
+      "entity": {"type": "page", "id": "1320391391"},
+      "action": "updated"
+    }
+  ]
+}
+PASS: mismo event_id publicado dos veces -> un solo registro en PostgreSQL.
+
+El ensayo demuestra idempotencia con PostgreSQL y JetStream reales.
+La recreación de la tarea y la integración con Webhooks reales aún no se
+declaran verificadas por esta prueba.

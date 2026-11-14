@@ -1,0 +1,10 @@
+Fuente: captura aportada por el integrante y guardada como PRE-B1-VM2-restauracion-archivos.png.
+Nodo del prompt: cna-node1; usuario arqweb con sudo.
+
+Se extrae bookstack-app.tar.gz a /var/www/bookstack-b1-restore,
+con strip-components=1 y same-permissions.
+La carpeta existe; artisan existe con propietario www-data.
+Tamano informado por du: 224M.
+La instalacion /var/www/bookstack no se reemplazo.
+
+Pendiente comprobar arranque de esta copia y conexion efectiva a bookstack_b1_restore.

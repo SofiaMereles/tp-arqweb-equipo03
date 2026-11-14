@@ -1,0 +1,12 @@
+Fuente: salida de terminal aportada por el integrante desde VM-2 cna-node1.
+Comando: sudo bash ~/tp2-b2-s1/cna/deploy/b2-search/preparar-worker.sh
+
+Ran 35 tests in 2.363s
+OK
+
+Imagen S1 lista en VM-2: cna-search-svc:1.0.0-87c76ad-021cea696896
+
+Resultado: construcción y pruebas Linux completadas. La suite incluye las
+pruebas compartidas de auditoría y las de búsqueda, incluidas dos regresiones
+de espera sin mensajes. Actualización del servicio y repetición de F6-E4/CA-3
+todavía pendientes; esta salida no acredita la edición real por Webhook.

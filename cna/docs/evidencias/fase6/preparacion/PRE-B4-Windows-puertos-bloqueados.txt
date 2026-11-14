@@ -1,0 +1,16 @@
+Fuente: salida aportada por el integrante desde PowerShell de Windows.
+
+Test-NetConnection 192.168.145.130 -Port 8081
+ComputerName: 192.168.145.130
+RemoteAddress: 192.168.145.130
+RemotePort: 8081
+InterfaceAlias: VMware Network Adapter VMnet1
+SourceAddress: 192.168.145.1
+PingSucceeded: True
+PingReplyDetails (RTT): 1 ms
+TcpTestSucceeded: False
+
+El comando para 8085 aparece iniciado en la salida recibida, pero aun no
+se adjunto su resultado detallado. El integrante indica "dio falso".
+8081 bloqueado desde Windows confirmado; conservar tambien resultado 8085.
+El acceso permitido desde VM-1 a ambos puertos fue verificado por separado.

@@ -1,0 +1,17 @@
+Preparacion B1: creacion de respaldo privado en VM-1
+Fuente: salida aportada por el integrante en el chat el 12/11/2026.
+Prompt: arqweb@arqwebserver:~$
+Comando: sudo bash ~/backup-vm1.sh
+
+Salida informada:
+Backup B1 creado en: /var/backups/bookstack-b1.KX0e0T
+Nodo: arqwebserver
+Tablas InnoDB: 41
+gzip/tar legibles y SHA-256 verificados.
+73M /var/backups/bookstack-b1.KX0e0T
+Contiene datos y secretos: no copiar al repositorio ni publicar.
+Pendiente: copia fuera de VM-1 y restauracion aislada.
+
+Resultado: creacion y controles de archivo completados segun la ejecucion aportada.
+Esto no demuestra restauracion funcional. No se incorpora el contenido del backup a Git.
+Copia externa y restauracion aislada pendientes.

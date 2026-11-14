@@ -1,0 +1,13 @@
+Fuente: salida y captura aportadas por el integrante desde VM-2.
+Comando guiado: sudo bash ~/tp2-b2/cna/deploy/b2-audit/preparar-worker.sh
+
+Ran 14 tests in 1.184s
+OK
+
+Imagen lista en VM-2: cna-audit-svc:1.0.0-87c76ad-db4af96523a3
+NATS descargado: nats:2.11.8-alpine
+Digest: sha256:71092f77d707a4a81b12aca5096d6b2d2e07ad16aa57c84066940a17af74f61a
+
+Construcción y pruebas Linux completadas. El mensaje inicial de imagen NATS
+no encontrada localmente fue seguido por una descarga satisfactoria.
+Todavía falta desplegar el stack desde VM-1 y ejecutar F6-E5 con dependencias reales.

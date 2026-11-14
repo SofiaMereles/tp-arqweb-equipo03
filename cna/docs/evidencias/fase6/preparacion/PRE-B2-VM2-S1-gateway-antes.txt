@@ -1,0 +1,17 @@
+Fuente: salida aportada por el integrante desde arqweb@cna-node1.
+Comando: sudo bash ~/probar-busqueda-gateway-worker.sh 3
+2026-11-13T23:49:55.444854+00:00
+
+URL: https://api.bookstack.local/v2/search?q=alfa&entity_type=page
+TLS: TLSv1.3; CA y nombre del certificado verificados.
+HTTP: 200
+X-Request-ID: 1f65bb154963c13e957cfa5eacdc2106
+Cabeceras de seguridad: presentes.
+Resultado: total=1, entity_type=page, entity_id=3, title=Prueba de búsqueda CNA.
+URL del resultado: https://bookstack.local/books/pruebas-cna/page/prueba-de-busqueda-cna
+book: id=2, title=Pruebas CNA.
+score: 0.4000000059604645.
+highlights.body: para el TP II. La frase de control inicial es: integrador nube <mark>alfa</mark>.
+
+PASS: busqueda autenticada por gateway, TLS 1.3, pagina 3 y resaltado alfa.
+Estado ANTES de editar. Falta comprobar la actualizacion por Webhook real.

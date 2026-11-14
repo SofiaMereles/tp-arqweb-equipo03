@@ -1,0 +1,13 @@
+Preparacion B1. Fuente: salida aportada por el integrante en el chat.
+Conexion indicada: Windows -> arqweb@192.168.145.130.
+Prompt de destino: arqweb@cna-node1:~$
+
+Comandos y resultados:
+hostnamectl --static
+cna-node1
+whoami
+arqweb
+
+Acceso SSH al nodo esperado confirmado por el resultado aportado.
+Guardar captura PRE-B1-VM2-acceso-SSH.png con la conexion y comandos.
+No es una prueba de Swarm ni de comunicacion entre dos nodos activos.

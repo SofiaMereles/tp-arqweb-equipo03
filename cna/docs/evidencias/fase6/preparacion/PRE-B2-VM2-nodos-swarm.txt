@@ -1,0 +1,20 @@
+F6-E1 / P33 - Dos nodos de Swarm
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+Comando: sudo docker node ls
+
+ID: zfs0dw2p02sym9v2v314nimdt
+HOSTNAME: arqwebserver
+STATUS: Ready
+AVAILABILITY: Drain
+MANAGER STATUS: Leader
+ENGINE VERSION: 29.9.3
+
+ID: nuqwfbte8oh50r4as32ze7d8g
+HOSTNAME: cna-node1
+STATUS: Ready
+AVAILABILITY: Active
+MANAGER STATUS: worker (campo vacio)
+ENGINE VERSION: 29.9.3
+
+Dos nodos listos comprobados; no demuestra aun despliegue de microservicios.
+Guardar captura F6-E1-nodos-swarm.png junto a esta salida.

@@ -1,0 +1,16 @@
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+Comprobacion: sudo ufw status verbose.
+
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+
+Reglas existentes: 22/tcp, 80/tcp, 443/tcp permitidos en IPv4 e IPv6.
+Reglas nuevas ALLOW IN, solo ens37 desde 192.168.145.130 hacia 192.168.145.129:
+2377/tcp
+7946/tcp
+7946/udp
+4789/udp
+
+Reglas privadas del manager comprobadas. Firewall del worker, reglas efectivas
+de Docker y pruebas de acceso siguen pendientes de cierre de B1.

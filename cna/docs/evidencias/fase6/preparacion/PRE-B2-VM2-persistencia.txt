@@ -1,0 +1,36 @@
+Fuente: salida aportada por el integrante desde arqweb@cna-node1.
+Comando: sudo bash ~/verificar-audit-recreado.sh 38213507-ee9d-4c9b-8ed8-e901cd1b62e6 1320391391
+Contenedor actual: 7b140879bca3
+2026-11-13T04:00:22.239718+00:00
+/healthz: 200 OK
+/readyz: 200 OK
+{
+  "total": 1,
+  "limit": 20,
+  "offset": 0,
+  "items": [
+    {
+      "event_id": "38213507-ee9d-4c9b-8ed8-e901cd1b62e6",
+      "type": "bookstack.page.updated",
+      "occurred_at": "2026-11-13T03:48:25.609034+00:00",
+      "recorded_at": "2026-11-13T03:48:28.391988+00:00",
+      "request_id": "F6-E5-a36c5ecf945f42b5b5358dc03fc0cabc",
+      "actor": {"id": null, "name": "Prueba controlada F6-E5"},
+      "entity": {"type": "page", "id": "1320391391"},
+      "action": "updated"
+    }
+  ]
+}
+Filtros por entidad/ID y rango de fechas: OK (inclusion y exclusion).
+Metricas Prometheus: contador por codigo e histograma disponibles.
+http_requests_total{code="200"} 30.0
+http_request_duration_seconds_count 30.0
+X-Request-ID propagado: B2-S2-persistencia-38213507-ee9d-4c9b-8ed8-e901cd1b62e6
+PASS: el evento original se conserva tras recrear auditoria; no se publicaron eventos en esta comprobacion.
+
+Extracto de los cinco logs JSON aportados (primero y ultimo):
+{"timestamp":"2026-11-13T04:00:22.468428+00:00","level":"info","service":"audit-svc","request_id":"B2-S2-persistencia-38213507-ee9d-4c9b-8ed8-e901cd1b62e6","message":"http_request"}
+{"timestamp":"2026-11-13T04:00:22.623748+00:00","level":"info","service":"audit-svc","request_id":"B2-S2-persistencia-38213507-ee9d-4c9b-8ed8-e901cd1b62e6","message":"http_request"}
+
+El reemplazo previo de la tarea se documenta por separado. Esta consulta
+no publico eventos nuevos y conservo el event_id y recorded_at originales.

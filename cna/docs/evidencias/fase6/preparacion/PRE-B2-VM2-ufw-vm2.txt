@@ -1,0 +1,19 @@
+Fuente: salida aportada por el integrante desde arqweb@cna-node1.
+Comando: sudo ufw status verbose
+
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                                  Action      From
+192.168.145.130 22/tcp on ens37       ALLOW IN    192.168.145.1
+192.168.145.130 22/tcp on ens37       ALLOW IN    192.168.145.129
+192.168.145.130 7946/tcp on ens37     ALLOW IN    192.168.145.129
+192.168.145.130 7946/udp on ens37     ALLOW IN    192.168.145.129
+192.168.145.130 4789/udp on ens37     ALLOW IN    192.168.145.129
+
+No aparecen reglas generales Anywhere para SSH, HTTP o HTTPS.
+Esta salida acredita la configuración UFW del nodo. La restricción efectiva
+de futuros puertos publicados por Docker debe verificarse al desplegarlos;
+no se infiere de ufw status que Docker quede filtrado automáticamente.

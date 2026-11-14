@@ -1,0 +1,31 @@
+Preparacion B1: identificacion de VM-1
+Fuente: salida de terminal pegada por el integrante en el chat el 12/11/2026.
+No es una captura automatica ni una prueba de clúster.
+
+Comandos informados:
+hostnamectl
+ip -br addr
+free -h
+systemctl is-active nginx php8.5-fpm mariadb
+
+Resultados relevantes:
+Hostname: arqwebserver
+Usuario del prompt: arqweb
+Virtualizacion: vmware
+SO: Ubuntu 26.04.1 LTS
+Kernel: Linux 7.0.0-31-generic
+Arquitectura: x86-64
+ens33: UP, 192.168.100.30/24, MAC 00:0c:29:fa:eb:cd
+ens37: UP, 192.168.145.129/24, MAC 00:0c:29:fa:eb:d7
+RAM: 3.3 GiB visibles; 658 MiB usados; 2.4 GiB libres;
+     490 MiB buff/cache; 2.6 GiB disponibles.
+Swap: 0 B
+nginx: active
+php8.5-fpm: active
+mariadb: active
+
+Las MAC coinciden con la configuracion de VMware llamada
+"Clon de Ubuntu Server TP ARQWEB". Se identifica como VM-1 existente.
+La IP de ens33 es la observada en esta sesion, no una direccion fija.
+Falta comprobar respuesta HTTP, copia de seguridad y restauracion aislada.
+VM-2 enlazada, Docker/Swarm, firewall y certificado doble SAN siguen pendientes.

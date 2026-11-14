@@ -1,0 +1,16 @@
+Fuente: captura PRE-B1-VM2-restauracion-SQL-adjunto.png aportada por el integrante.
+Se conserva tambien la captura previamente guardada con nombre PRE-B1-VM2-restauracion-SQL.png.
+Fecha que muestra la consola: 2026-11-13T00:43:46+00:00 (UTC).
+Nodo: cna-node1; usuario arqweb con sudo.
+Comando: sudo bash ~/probar-restauracion-db-vm2.sh
+
+Restauracion SQL completada en base separada: bookstack_b1_restore.
+Tablas restauradas: 41.
+Comparacion de recuentos:
+bookstack_db: entidades=1, usuarios=2, actividades=2.
+bookstack_b1_restore: entidades=1, usuarios=2, actividades=2.
+
+Registro privado informado: /var/backups/b1-restore-db.HoSaWU
+La base existente no se reemplazo.
+La importacion y los recuentos no constituyen aun prueba funcional de la aplicacion.
+Recuperacion de archivos y comprobacion de aplicacion con la base restaurada pendientes.

@@ -1,0 +1,37 @@
+arqweb@cna-node1:~$ SEARCH_ID=$(sudo docker ps --filter label=com.docker.swarm.service.name=cna_search -q)
+
+sudo docker inspect "$SEARCH_ID" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^RECONCILE_SECONDS='
+
+sudo docker logs --since 15m "$SEARCH_ID" 2>&1 | grep -E 'consumer_reconnecting|initial_index_complete|broker_error|delivery_unconfirmed|event_retry|event_applied' | tail -n 30
+RECONCILE_SECONDS=3600
+{"timestamp": "2026-11-14T00:03:18.556398+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:03:23.337438+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:03:27.373738+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:03:32.089242+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:03:49.674681+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:03:54.441614+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:03:54.944837+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:03:59.780995+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:04:02.290255+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:04:07.102508+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:04:26.162704+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:04:30.939296+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:04:48.023430+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:04:52.904329+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:04:53.406993+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:04:58.201887+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:05:35.867877+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:05:40.740379+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:06:40.972646+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:06:45.782095+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:07:02.338686+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:07:07.188130+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:07:19.733374+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:07:24.522479+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:07:51.108894+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:07:56.073096+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:07:56.575893+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:08:01.333195+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+{"timestamp": "2026-11-14T00:08:01.836406+00:00", "level": "warning", "service": "search-svc", "request_id": "-", "message": "consumer_reconnecting", "error_type": "TimeoutError"}
+{"timestamp": "2026-11-14T00:08:06.710871+00:00", "level": "info", "service": "search-svc", "request_id": "-", "message": "initial_index_complete"}
+arqweb@cna-node1:~

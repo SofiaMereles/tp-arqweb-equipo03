@@ -1,0 +1,10 @@
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+Comando: sudo docker service update --env-add RECONCILE_SECONDS=60 --detach=false cna_search
+
+cna_search
+overall progress: 1 out of 1 tasks
+1/1: running
+verify: Service cna_search converged
+
+Resultado: intervalo habitual de reconciliación restaurado a 60 segundos
+después de la prueba F6-E4/CA-3. La actualización del servicio convergió.

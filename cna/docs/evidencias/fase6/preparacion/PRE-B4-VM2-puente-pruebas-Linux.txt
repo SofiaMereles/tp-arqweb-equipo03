@@ -1,0 +1,13 @@
+Fuente: ultimas lineas de terminal aportadas por el integrante en VM-2.
+Comando guiado: sudo bash ~/tp2-b4/cna/deploy/b4-integration/preparar-worker.sh
+Fecha de logs aportados: 2026-11-13T23:11:24Z.
+
+Ran 13 tests in 2.810s
+OK
+
+Imagen del puente lista en VM-2: cna-event-bridge-svc:1.0.0-87c76ad-7135bd137bad
+Pendiente: filtro de puertos, despliegue y Webhooks reales.
+
+La advertencia de asyncio indica una tarea de prueba lenta (0,218 s);
+el resultado final de la suite fue OK. No se declara aprobado el flujo
+de Webhooks reales ni F6-E4 mediante estas pruebas unitarias.

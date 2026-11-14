@@ -1,0 +1,13 @@
+Fuente: captura aportada por el integrante; PRE-B1-VM2-identidad-nueva.png.
+Preparacion B1: identificacion de VM-2 despues del cambio y reinicio.
+
+Prompt: arqweb@cna-node1:~$
+hostnamectl --static: cna-node1
+cat /etc/machine-id: identificador de 32 caracteres distinto del de VM-1.
+ip -br link:
+ens33 DOWN / NO-CARRIER; MAC 00:0c:29:7f:f2:10
+ens37 DOWN / NO-CARRIER; MAC 00:0c:29:7f:f2:1a
+
+Nombre y machine-id independientes confirmados en la captura.
+Ambas interfaces siguen sin enlace.
+Claves de host SSH, direccion privada propia y conectividad pendientes.

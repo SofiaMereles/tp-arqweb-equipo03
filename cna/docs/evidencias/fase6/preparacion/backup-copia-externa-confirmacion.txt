@@ -1,0 +1,13 @@
+Preparacion B1: copia fuera de VM-1
+Fuente: confirmaciones del integrante en el chat; 12/11/2026.
+
+Archivo de origen: /home/arqweb/bookstack-b1.KX0e0T.tar.gz
+Destino Windows: C:\Users\sofii\Backups-BookStack\bookstack-b1.KX0e0T.tar.gz
+Nodo Windows: SOFI_PORTATIL
+SCP: transferencia al 100%, aproximadamente 73 MB.
+El integrante confirma que los SHA-256 de Ubuntu y Windows coinciden.
+Las cadenas de hash no se aportaron al chat; conservar la captura original como evidencia de comparacion.
+
+Contenido del respaldo privado fuera del repositorio.
+Creacion y copia verificadas segun la salida/confirmacion recibida.
+Restauracion aislada pendiente; esto no aprueba B1 ni demuestra recuperacion funcional.

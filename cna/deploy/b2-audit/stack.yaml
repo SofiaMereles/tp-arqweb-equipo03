@@ -1,0 +1,85 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
+      POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256'
+    secrets: [pg_admin_password, audit_db_password]
+    configs:
+      - source: postgres_init
+        target: /docker-entrypoint-initdb.d/10-audit.sh
+        mode: 0555
+    command: ['postgres', '-c', 'shared_buffers=32MB', '-c', 'max_connections=30']
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    networks: [backend]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d audit_db']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    deploy:
+      placement:
+        constraints: [node.hostname == cna-node1]
+      resources:
+        limits: {cpus: '0.50', memory: 256M}
+  nats:
+    image: nats:2.11.8-alpine
+    user: '10001:10001'
+    entrypoint: ['/bin/sh']
+    command: ['/etc/nats/start.sh']
+    secrets: [nats_token]
+    configs:
+      - source: nats_config
+        target: /etc/nats/nats.conf
+      - source: nats_start
+        target: /etc/nats/start.sh
+        mode: 0555
+    volumes: [nats_data:/data]
+    networks: [backend]
+    read_only: true
+    deploy:
+      placement:
+        constraints: [node.hostname == cna-node1]
+      resources:
+        limits: {cpus: '0.25', memory: 128M}
+  audit:
+    image: ${AUDIT_IMAGE}
+    environment:
+      SERVICE_API_KEY_FILE: /run/secrets/audit_api_key
+      PGHOST: postgres
+      PGDATABASE: audit_db
+      PGUSER: audit_owner
+      PGPASSWORD_FILE: /run/secrets/audit_db_password
+      NATS_URL: nats://nats:4222
+      NATS_TOKEN_FILE: /run/secrets/nats_token
+      MAX_EVENT_ATTEMPTS: '5'
+    secrets: [audit_db_password, audit_api_key, nats_token]
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp]
+    deploy:
+      placement:
+        constraints: [node.hostname == cna-node1]
+      restart_policy: {condition: any, delay: 5s}
+      resources:
+        limits: {cpus: '0.50', memory: 192M}
+networks:
+  backend:
+    driver: overlay
+volumes:
+  postgres_data: {}
+  nats_data: {}
+secrets:
+  pg_admin_password: {external: true, name: cna_pg_admin_password}
+  audit_db_password: {external: true, name: cna_audit_db_password}
+  audit_api_key: {external: true, name: cna_audit_api_key}
+  nats_token: {external: true, name: cna_nats_token}
+configs:
+  postgres_init:
+    file: ./postgres-init.sh
+  nats_config:
+    file: ./nats.conf
+  nats_start:
+    external: true
+    name: cna_nats_start_v2

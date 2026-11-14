@@ -1,0 +1,16 @@
+Fuente: salida aportada por el integrante desde arqweb@cna-node1.
+Comando: sudo bash ~/tp2-b4/cna/deploy/b4-integration/proteger-puertos-worker.sh
+
+Unidad cna-port-filter.service habilitada mediante enlace en multi-user.target.wants.
+UFW: Rule added (dos reglas privadas, puertos TCP 8081/8085).
+
+Filtro configurado: puertos 8081/8085 solo desde VM-1 por ens37.
+-N CNA-PORTS
+-A CNA-PORTS -s 192.168.145.129/32 -i ens37 -p tcp -m conntrack --ctorigdstport 8081 --ctdir ORIGINAL -j ACCEPT
+-A CNA-PORTS -p tcp -m conntrack --ctorigdstport 8081 --ctdir ORIGINAL -j DROP
+-A CNA-PORTS -s 192.168.145.129/32 -i ens37 -p tcp -m conntrack --ctorigdstport 8085 --ctdir ORIGINAL -j ACCEPT
+-A CNA-PORTS -p tcp -m conntrack --ctorigdstport 8085 --ctdir ORIGINAL -j DROP
+La efectividad se comprobara despues de publicar los servicios.
+
+Esta salida acredita configuracion, no aun la prueba de acceso permitido
+desde VM-1 y rechazo desde Windows tras publicar los puertos.

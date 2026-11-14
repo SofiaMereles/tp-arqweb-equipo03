@@ -1,0 +1,26 @@
+Preparacion B1: revision local del clon enlazado; 12/11/2026.
+Fuente: inventario VMware, VMX y descriptor VMDK leidos sin modificarlos.
+
+Nombre: cna-node1
+VMX: C:\Maquina Virtual Clon\cna-node1.vmx
+CPU: 2 vCPU
+RAM al revisar: 4096 MiB
+Disco: Ubuntu Server TP ARQWEB-cl2.vmdk
+Descriptor:
+CID=614db13e
+parentCID=614db13e
+createType="monolithicSparse"
+parentFileNameHint="C:\Maquinas Virtuales\Ubuntu Server TP ARQWEB-cl1.vmdk"
+
+El descriptor declara dependencia de disco padre: confirma clon enlazado.
+vmrun -T ws list: Total running VMs: 0.
+
+El VMX del clon aun registra MAC de la fuente:
+ethernet0.generatedAddress = 00:0c:29:fa:eb:cd
+ethernet1.generatedAddress = 00:0c:29:fa:eb:d7
+Se verificaran y regeneraran identidades antes de conectarlo como nodo independiente.
+
+Plan del primer arranque: solo VM-2, ambas NIC desconectadas y memoria
+temporal de 2048 MiB para preparacion. Ajuste aun no verificado.
+No es el presupuesto final ni prueba de capacidad de toda la plataforma.
+Hostname/IP propios, restauracion y Docker/Swarm pendientes.

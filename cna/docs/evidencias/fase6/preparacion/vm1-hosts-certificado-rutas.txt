@@ -1,0 +1,12 @@
+Fuente: salidas y captura aportadas por el integrante.
+Windows hosts actualizado:
+192.168.145.129 bookstack.local api.bookstack.local
+
+Nginx efectivo informado en VM-1:
+server_name bookstack.local
+ssl_certificate /etc/ssl/certs/bookstack.crt
+ssl_certificate_key /etc/ssl/private/bookstack.key
+ssl_protocols TLSv1.2 TLSv1.3
+
+Solo se registran rutas, no la clave privada.
+Reemision de certificado con doble SAN y verificacion de handshake pendientes.

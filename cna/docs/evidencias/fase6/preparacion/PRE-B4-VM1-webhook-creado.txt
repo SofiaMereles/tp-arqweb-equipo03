@@ -1,0 +1,8 @@
+Fuente: confirmacion textual del integrante: "listo creado el webhooks".
+Se guio su creacion en BookStack, nombre Eventos CNA - Paginas, activo,
+eventos page_create/page_update/page_delete y endpoint obtenido desde
+archivo privado. El token no se publico en la conversacion ni se incluye aqui.
+
+Es confirmacion del integrante, no captura inspeccionada ni prueba de
+entrega. Falta editar una pagina real, comprobar inbox/outbox, publicacion
+NATS y efectos en busqueda/auditoria, y revisar evidencia F6-E11.

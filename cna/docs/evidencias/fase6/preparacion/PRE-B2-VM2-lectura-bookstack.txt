@@ -1,0 +1,15 @@
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+Ordenado desde VM-1, ejecutado por tarea Swarm en cna-node1 (VM-2).
+Comando: sudo bash ~/b2-search/probar-acceso-vm2.sh
+2026-11-13T21:09:20.954831+00:00
+
+API paginas: HTTP 200; total visible=1; offset=0
+Libro: Pruebas CNA
+Pagina: Prueba de búsqueda CNA ; ID: 3 ; book_id: 2
+Contenido de control leido: integrador nube alfa
+Consulta administrativa de usuarios: HTTP 403, acceso denegado.
+PASS: VM-2 lee la pagina por API con TLS verificado y sin permiso para administrar usuarios.
+No se modificaron paginas ni se imprimio el token. La indexacion de S1 aun no se ejecuto.
+
+Esta prueba no demuestra todos los permisos negativos del rol ni sustituye
+su captura. Tampoco es F6-E4: no hay todavía búsqueda indexada vía gateway.

@@ -1,0 +1,22 @@
+Preparacion B1: consultas de solo lectura desde Windows
+Nodo: SOFI_PORTATIL
+Fecha de consulta CIM: 2026-11-12T22:25:46.2974453Z
+
+Win32_ComputerSystem / Win32_OperatingSystem:
+RAM fisica: 15.31 GiB
+RAM visible: 15.31 GiB
+RAM libre en ese instante: 4.76 GiB
+Procesadores logicos: 12
+
+vmrun -T ws list:
+Total running VMs: 0
+
+Inventario VMware y configuraciones VMX consultadas:
+Ubuntu Server TP ARQWEB: 2 vCPU, 4096 MiB; adaptador Solo host 00:0c:29:d6:43:d9.
+Clon de Ubuntu Server TP ARQWEB: 2 vCPU, 4096 MiB; adaptador Solo host 00:0c:29:fa:eb:d7.
+
+La MAC del segundo coincide con ens37 del relevamiento de BookStack.
+La identidad y funcion actuales de cada invitado requieren comprobacion al encenderlo.
+No se inicio ninguna VM ni se cambio su configuracion.
+La memoria libre debe medirse de nuevo antes de ejecutar dos VM de 4 GB.
+Esta preparacion no aprueba F6-E1/P33 ni B1.

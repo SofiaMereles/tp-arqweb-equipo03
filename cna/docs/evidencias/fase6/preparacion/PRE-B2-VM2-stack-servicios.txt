@@ -1,0 +1,11 @@
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+Comando: sudo docker stack services cna
+
+NAME           MODE         REPLICAS   IMAGE
+cna_audit      replicated   1/1        cna-audit-svc:1.0.0-87c76ad-db4af96523a3
+cna_nats       replicated   1/1        nats:2.11.8-alpine
+cna_postgres   replicated   1/1        postgres:17.6-alpine
+
+Los tres servicios alcanzaron 1/1 después de aplicar nats-start.sh como
+Docker config. El estado de réplicas no sustituye la comprobación de
+readyz ni la prueba funcional F6-E5 de idempotencia, todavía pendientes.

@@ -1,0 +1,103 @@
+C:\Users\sofii\tp-arqweb\cna\services\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+{"timestamp": "2026-11-13T23:01:57.049594+00:00", "level": "info", "service": "audit-svc", "request_id": "test-audit-01", "message": "event_recorded"}
+test_ack_is_after_successful_transaction (test_audit.ConsumerTests.test_ack_is_after_successful_transaction) ... ok
+{"timestamp": "2026-11-13T23:01:57.165727+00:00", "level": "warning", "service": "audit-svc", "request_id": "test-audit-01", "message": "event_retry", "error_type": "RuntimeError"}
+test_failed_dlq_publish_does_not_terminate_original (test_audit.ConsumerTests.test_failed_dlq_publish_does_not_terminate_original) ... ok
+{"timestamp": "2026-11-13T23:01:57.277860+00:00", "level": "warning", "service": "audit-svc", "request_id": "test-audit-01", "message": "event_retry", "error_type": "RuntimeError"}
+test_failed_transaction_is_not_acknowledged (test_audit.ConsumerTests.test_failed_transaction_is_not_acknowledged) ... ok
+test_lost_ack_does_not_dlq_an_already_committed_record (test_audit.ConsumerTests.test_lost_ack_does_not_dlq_an_already_committed_record) ... ok
+test_date_requires_timezone (test_audit.EventTests.test_date_requires_timezone) ... ok
+test_event_validates_against_actual_asyncapi (test_audit.EventTests.test_event_validates_against_actual_asyncapi) ... ok
+test_invalid_or_unsupported_event_is_rejected (test_audit.EventTests.test_invalid_or_unsupported_event_is_rejected) ... ok
+{"timestamp": "2026-11-13T23:01:57.692367+00:00", "level": "info", "service": "audit-svc", "request_id": "68fa305cddcc4a7a9737269bbdbe3575", "message": "http_request"}
+test_authentication_is_required (test_audit.HttpTests.test_authentication_is_required) ... ok
+{"timestamp": "2026-11-13T23:01:57.708464+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:57.717963+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:57.727863+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:57.737429+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:57.748358+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:57.757671+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+test_invalid_filters_are_400 (test_audit.HttpTests.test_invalid_filters_are_400) ... ok
+{"timestamp": "2026-11-13T23:01:57.770781+00:00", "level": "info", "service": "audit-svc", "request_id": "9ffc7a2e23a94e75b390ed705959ed68", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:57.782306+00:00", "level": "info", "service": "audit-svc", "request_id": "2defad809ebc451e80ebe3f6f49087ee", "message": "http_request"}
+test_liveness_is_separate_from_readiness (test_audit.HttpTests.test_liveness_is_separate_from_readiness) ... ok
+{"timestamp": "2026-11-13T23:01:57.795326+00:00", "level": "info", "service": "audit-svc", "request_id": "80758804ed7148ce8e91bb25acdfaab9", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:57.803577+00:00", "level": "info", "service": "audit-svc", "request_id": "92525e728f5548008a77e6f2983d1fbe", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:57.814007+00:00", "level": "info", "service": "audit-svc", "request_id": "f325af1ad20343db9e52f0e09172fe7b", "message": "http_request"}
+test_metrics_include_codes_and_latency_histogram (test_audit.HttpTests.test_metrics_include_codes_and_latency_histogram) ... ok
+{"timestamp": "2026-11-13T23:01:57.829742+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+test_request_id_and_contract (test_audit.HttpTests.test_request_id_and_contract) ... ok
+{"timestamp": "2026-11-13T23:01:57.950989+00:00", "level": "error", "service": "audit-svc", "request_id": "evidence-test", "message": "request_failed", "error_type": "RuntimeError"}
+{"timestamp": "2026-11-13T23:01:57.950989+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+test_unavailable_database_returns_uniform_503 (test_audit.HttpTests.test_unavailable_database_returns_uniform_503) ... ok
+{"timestamp": "2026-11-13T23:01:57.964309+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+test_valid_filters_reach_store (test_audit.HttpTests.test_valid_filters_reach_store) ... ok
+{"timestamp": "2026-11-13T23:01:58.142012+00:00", "level": "info", "service": "event-bridge", "request_id": "16b4c228d591484281965e389aa43f2c", "message": "http_request"}
+test_duplicate_receipt_is_200_and_original_id (test_bridge.HttpTests.test_duplicate_receipt_is_200_and_original_id) ... ok
+{"timestamp": "2026-11-13T23:01:58.291682+00:00", "level": "info", "service": "event-bridge", "request_id": "bridge-test", "message": "http_request"}
+test_durable_receipt_matches_openapi (test_bridge.HttpTests.test_durable_receipt_matches_openapi) ... ok
+{"timestamp": "2026-11-13T23:01:58.518851+00:00", "level": "error", "service": "event-bridge", "request_id": "29c066603f58426c96011a0c87ab8704", "message": "request_failed", "error_type": "RuntimeError"}
+{"timestamp": "2026-11-13T23:01:58.520063+00:00", "level": "info", "service": "event-bridge", "request_id": "29c066603f58426c96011a0c87ab8704", "message": "http_request"}
+test_failed_commit_returns_503_not_202 (test_bridge.HttpTests.test_failed_commit_returns_503_not_202) ... ok
+{"timestamp": "2026-11-13T23:01:58.729141+00:00", "level": "info", "service": "event-bridge", "request_id": "71ac910b7fc54ed8b855f2c665d10d4c", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:58.739304+00:00", "level": "info", "service": "event-bridge", "request_id": "a444904bb2d3473d869d4b3df18196b0", "message": "http_request"}
+test_health_and_readiness_separate (test_bridge.HttpTests.test_health_and_readiness_separate) ... ok
+{"timestamp": "2026-11-13T23:01:58.910738+00:00", "level": "info", "service": "event-bridge", "request_id": "d6a7fff9675547119156c7d62ebdf182", "message": "http_request"}
+test_invalid_token_is_401_before_persistence (test_bridge.HttpTests.test_invalid_token_is_401_before_persistence) ... ok
+{"timestamp": "2026-11-13T23:01:59.055986+00:00", "level": "info", "service": "event-bridge", "request_id": "3dbb12e14e0949a39cc55b3b1d4d6a1b", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:59.063628+00:00", "level": "info", "service": "event-bridge", "request_id": "94edea9bf09a458491241221c3dc3ef0", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:59.073990+00:00", "level": "info", "service": "event-bridge", "request_id": "b8829f68354445bab103db3b2692d02a", "message": "http_request"}
+{"timestamp": "2026-11-13T23:01:59.083448+00:00", "level": "info", "service": "event-bridge", "request_id": "0a96b90330a14842a403290d674533c0", "message": "http_request"}
+test_invalid_webhooks_not_persisted (test_bridge.HttpTests.test_invalid_webhooks_not_persisted) ... ok
+test_query_token_is_not_logged (test_bridge.HttpTests.test_query_token_is_not_logged) ... ok
+test_canonical_body_not_json_key_order_defines_deduplication (test_bridge.NormalizationTests.test_canonical_body_not_json_key_order_defines_deduplication) ... ok
+test_different_webhook_or_timestamp_does_not_collapse_events (test_bridge.NormalizationTests.test_different_webhook_or_timestamp_does_not_collapse_events) ... ok
+test_each_required_page_event_maps_to_asyncapi (test_bridge.NormalizationTests.test_each_required_page_event_maps_to_asyncapi) ... ok
+test_failed_publish_leaves_outbox_pending (test_bridge.PublisherTests.test_failed_publish_leaves_outbox_pending) ... Executing <Task pending name='Task-100' coro=<PublisherTests.test_failed_publish_leaves_outbox_pending() running at C:\Users\sofii\tp-arqweb\cna\services\tests\test_bridge.py:116> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\sofii\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\futures.py:389, Task.task_wakeup()] created at C:\Users\sofii\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\base_events.py:448> cb=[_run_until_complete_cb() at C:\Users\sofii\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\base_events.py:181] created at C:\Users\sofii\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\runners.py:100> took 0.140 seconds
+ok
+test_sent_marker_is_after_publish_ack (test_bridge.PublisherTests.test_sent_marker_is_after_publish_ack) ... Executing <Task pending name='Task-105' coro=<PublisherTests.test_sent_marker_is_after_publish_ack() running at C:\Users\sofii\tp-arqweb\cna\services\tests\test_bridge.py:107> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\sofii\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\futures.py:389, Task.task_wakeup()] created at C:\Users\sofii\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\base_events.py:448> cb=[_run_until_complete_cb() at C:\Users\sofii\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\base_events.py:181] created at C:\Users\sofii\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\runners.py:100> took 0.141 seconds
+{"timestamp": "2026-11-13T23:02:00.021013+00:00", "level": "info", "service": "event-bridge", "request_id": "request", "message": "event_published"}
+ok
+test_outbox_failure_propagates_for_transaction_rollback (test_bridge.TransactionTests.test_outbox_failure_propagates_for_transaction_rollback) ... ok
+{"timestamp": "2026-11-13T23:02:00.332898+00:00", "level": "info", "service": "search-svc", "request_id": "search-event-test", "message": "event_applied"}
+test_ack_after_projection_commit (test_search.ConsumerTests.test_ack_after_projection_commit) ... ok
+{"timestamp": "2026-11-13T23:02:00.466831+00:00", "level": "warning", "service": "search-svc", "request_id": "search-event-test", "message": "event_retry", "error_type": "RuntimeError"}
+test_failed_projection_is_retried_without_ack (test_search.ConsumerTests.test_failed_projection_is_retried_without_ack) ... ok
+{"timestamp": "2026-11-13T23:02:00.604439+00:00", "level": "info", "service": "search-svc", "request_id": "search-event-test", "message": "event_applied"}
+test_page_deleted_event_is_passed_to_transactional_store (test_search.ConsumerTests.test_page_deleted_event_is_passed_to_transactional_store) ... ok
+test_highlighting_escapes_source_and_only_adds_mark (test_search.DocumentTests.test_highlighting_escapes_source_and_only_adds_mark) ... ok
+test_html_text_extraction_skips_scripts_and_styles (test_search.DocumentTests.test_html_text_extraction_skips_scripts_and_styles) ... ok
+test_listing_reads_every_page (test_search.DocumentTests.test_listing_reads_every_page) ... ok
+test_native_book_and_page_links (test_search.DocumentTests.test_native_book_and_page_links) ... ok
+test_partial_listing_does_not_silently_truncate (test_search.DocumentTests.test_partial_listing_does_not_silently_truncate) ... ok
+{"timestamp": "2026-11-13T23:02:00.644108+00:00", "level": "info", "service": "search-svc", "request_id": "05f0aaa6c41a41f3b5db090b02284f6a", "message": "http_request"}
+test_authentication_required (test_search.HttpTests.test_authentication_required) ... ok
+{"timestamp": "2026-11-13T23:02:00.657541+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:02:00.668055+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:02:00.678112+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:02:00.687629+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:02:00.697791+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+{"timestamp": "2026-11-13T23:02:00.708390+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+test_bad_query_returns_400 (test_search.HttpTests.test_bad_query_returns_400) ... ok
+{"timestamp": "2026-11-13T23:02:00.724222+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+test_deleted_or_unreadable_candidate_is_not_exposed (test_search.HttpTests.test_deleted_or_unreadable_candidate_is_not_exposed) ... ok
+{"timestamp": "2026-11-13T23:02:00.739609+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+test_entity_filter_and_pagination (test_search.HttpTests.test_entity_filter_and_pagination) ... ok
+{"timestamp": "2026-11-13T23:02:00.752831+00:00", "level": "info", "service": "search-svc", "request_id": "666b978d867649bab42eb68d4feb4918", "message": "http_request"}
+{"timestamp": "2026-11-13T23:02:00.766001+00:00", "level": "info", "service": "search-svc", "request_id": "a12896fead984b8b8fc6f4a2d7128ff2", "message": "http_request"}
+{"timestamp": "2026-11-13T23:02:00.778047+00:00", "level": "info", "service": "search-svc", "request_id": "cba33b8e26764b54ac0a8526a515b40d", "message": "http_request"}
+test_health_readiness_and_metrics (test_search.HttpTests.test_health_readiness_and_metrics) ... ok
+{"timestamp": "2026-11-13T23:02:00.793057+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+test_search_response_matches_openapi (test_search.HttpTests.test_search_response_matches_openapi) ... ok
+{"timestamp": "2026-11-13T23:02:00.891040+00:00", "level": "info", "service": "search-svc", "request_id": "search-request-test", "message": "http_request"}
+test_zero_results_is_200 (test_search.HttpTests.test_zero_results_is_200) ... ok
+test_delete_event_removes_page_without_fetching_content (test_search.ProjectionTests.test_delete_event_removes_page_without_fetching_content) ... ok
+test_duplicate_does_not_repeat_projection_or_api_calls (test_search.ProjectionTests.test_duplicate_does_not_repeat_projection_or_api_calls) ... ok
+test_failed_initial_api_scan_does_not_clear_previous_index (test_search.ProjectionTests.test_failed_initial_api_scan_does_not_clear_previous_index) ... ok
+test_stale_event_does_not_overwrite_newer_entity (test_search.ProjectionTests.test_stale_event_does_not_overwrite_newer_entity) ... ok
+
+----------------------------------------------------------------------
+Ran 46 tests in 3.971s
+
+OK

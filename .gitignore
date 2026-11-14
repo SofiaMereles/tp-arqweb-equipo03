@@ -8,6 +8,9 @@ Thumbs.db
 
 # Dependencias y archivos temporales locales
 node_modules/
+.venv/
+__pycache__/
+*.pyc
 /tmp/
 .env.*
 !.env.example

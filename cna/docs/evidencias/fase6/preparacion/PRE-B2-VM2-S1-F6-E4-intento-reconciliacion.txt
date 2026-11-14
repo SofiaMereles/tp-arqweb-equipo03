@@ -1,0 +1,13 @@
+Fuente: salida aportada por el integrante desde arqweb@cna-node1.
+Comando: sudo bash ~/b5-gateway/f6e4-edicion-worker.sh 3
+
+F6-E4 / P36 y CA-3. Estado inicial: alfa encontrado por gateway.
+AHORA, en el navegador: editar la pagina de prueba, cambiar alfa por beta y guardar.
+Esta terminal observa por hasta 180 segundos; no publica eventos ni modifica paginas.
+AssertionError: Hubo reconciliacion REST durante el ensayo; no atribuir cambio solo a evento
+
+Resultado: ensayo no aprobado. No se presenta esta ejecucion como evidencia
+positiva de F6-E4/CA-3. Revisar logs y configuracion efectiva antes de repetir.
+El equipo habia confirmado anteriormente el cambio temporal de
+RECONCILE_SECONDS=3600 mediante docker service update con convergencia.
+El motivo de la reconstruccion durante esta ejecucion aun no esta confirmado.

@@ -1,0 +1,40 @@
+C:\Users\sofii\tp-arqweb\cna\services\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+{"timestamp": "2026-11-13T03:18:53.311596+00:00", "level": "info", "service": "audit-svc", "request_id": "test-audit-01", "message": "event_recorded"}
+test_ack_is_after_successful_transaction (test_audit.ConsumerTests.test_ack_is_after_successful_transaction) ... ok
+{"timestamp": "2026-11-13T03:18:53.427913+00:00", "level": "warning", "service": "audit-svc", "request_id": "test-audit-01", "message": "event_retry", "error_type": "RuntimeError"}
+test_failed_dlq_publish_does_not_terminate_original (test_audit.ConsumerTests.test_failed_dlq_publish_does_not_terminate_original) ... ok
+{"timestamp": "2026-11-13T03:18:53.544838+00:00", "level": "warning", "service": "audit-svc", "request_id": "test-audit-01", "message": "event_retry", "error_type": "RuntimeError"}
+test_failed_transaction_is_not_acknowledged (test_audit.ConsumerTests.test_failed_transaction_is_not_acknowledged) ... ok
+test_lost_ack_does_not_dlq_an_already_committed_record (test_audit.ConsumerTests.test_lost_ack_does_not_dlq_an_already_committed_record) ... ok
+test_date_requires_timezone (test_audit.EventTests.test_date_requires_timezone) ... ok
+test_event_validates_against_actual_asyncapi (test_audit.EventTests.test_event_validates_against_actual_asyncapi) ... ok
+test_invalid_or_unsupported_event_is_rejected (test_audit.EventTests.test_invalid_or_unsupported_event_is_rejected) ... ok
+{"timestamp": "2026-11-13T03:18:54.006606+00:00", "level": "info", "service": "audit-svc", "request_id": "fa98f24fb242426cb04bf3f023ba9059", "message": "http_request"}
+test_authentication_is_required (test_audit.HttpTests.test_authentication_is_required) ... ok
+{"timestamp": "2026-11-13T03:18:54.023232+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T03:18:54.033310+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T03:18:54.042584+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T03:18:54.052870+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T03:18:54.062502+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+{"timestamp": "2026-11-13T03:18:54.071780+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+test_invalid_filters_are_400 (test_audit.HttpTests.test_invalid_filters_are_400) ... ok
+{"timestamp": "2026-11-13T03:18:54.085165+00:00", "level": "info", "service": "audit-svc", "request_id": "f73606e3d72141a0b7190af538adf943", "message": "http_request"}
+{"timestamp": "2026-11-13T03:18:54.095266+00:00", "level": "info", "service": "audit-svc", "request_id": "33cd27aa4a4e449e8c37aa1caba2320e", "message": "http_request"}
+test_liveness_is_separate_from_readiness (test_audit.HttpTests.test_liveness_is_separate_from_readiness) ... ok
+{"timestamp": "2026-11-13T03:18:54.108351+00:00", "level": "info", "service": "audit-svc", "request_id": "b9ed7f8612da481b9c10d0845af6055c", "message": "http_request"}
+{"timestamp": "2026-11-13T03:18:54.116872+00:00", "level": "info", "service": "audit-svc", "request_id": "bc08d2116e784ec5b9389b6f1f7bc904", "message": "http_request"}
+{"timestamp": "2026-11-13T03:18:54.127012+00:00", "level": "info", "service": "audit-svc", "request_id": "7cb01f52e5db4e3fa5cb1e6237c8b213", "message": "http_request"}
+test_metrics_include_codes_and_latency_histogram (test_audit.HttpTests.test_metrics_include_codes_and_latency_histogram) ... ok
+{"timestamp": "2026-11-13T03:18:54.138945+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+test_request_id_and_contract (test_audit.HttpTests.test_request_id_and_contract) ... ok
+{"timestamp": "2026-11-13T03:18:54.238598+00:00", "level": "error", "service": "audit-svc", "request_id": "evidence-test", "message": "request_failed", "error_type": "RuntimeError"}
+{"timestamp": "2026-11-13T03:18:54.238598+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+test_unavailable_database_returns_uniform_503 (test_audit.HttpTests.test_unavailable_database_returns_uniform_503) ... ok
+{"timestamp": "2026-11-13T03:18:54.252055+00:00", "level": "info", "service": "audit-svc", "request_id": "evidence-test", "message": "http_request"}
+test_valid_filters_reach_store (test_audit.HttpTests.test_valid_filters_reach_store) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 1.057s
+
+OK

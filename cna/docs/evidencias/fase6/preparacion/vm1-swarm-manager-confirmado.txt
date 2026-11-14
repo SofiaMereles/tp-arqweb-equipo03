@@ -1,0 +1,14 @@
+Fuente: salida aportada por el integrante en el chat.
+Nodo: arqwebserver; usuario arqweb con sudo.
+Comando: sudo docker node ls
+
+ID: zfs0dw2p02sym9v2v314nimdt
+HOSTNAME: arqwebserver
+STATUS: Ready
+AVAILABILITY: Drain
+MANAGER STATUS: Leader
+ENGINE VERSION: 29.9.3
+
+Inicializacion del manager comprobada. Solo aparece un nodo.
+Pendiente unir cna-node1 y verificar los dos nodos para F6-E1/P33.
+No se publican tokens de union.

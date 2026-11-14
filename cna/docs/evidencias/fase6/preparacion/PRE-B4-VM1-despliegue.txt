@@ -1,0 +1,18 @@
+Fuente: salidas aportadas por el integrante desde arqweb@arqwebserver.
+Comandos: desplegar-manager.sh de b4-integration y docker stack services cna.
+
+PASS: bridge_db y bridge_owner listos; rol sin privilegios administrativos.
+Aislamiento: bridge_owner no conecta a audit_db; audit_owner no tiene CONNECT a bridge_db.
+No se modificaron registros de auditoria ni datos de BookStack.
+Puente y busqueda publicados para acceso privado desde VM-1.
+
+Estado posterior confirmado:
+cna_audit     1/1  cna-audit-svc:1.0.0-87c76ad-db4af96523a3
+cna_bridge    1/1  cna-event-bridge-svc:1.0.0-87c76ad-7135bd137bad
+cna_nats      1/1  nats:2.11.8-alpine
+cna_postgres  1/1  postgres:17.6-alpine
+cna_search    1/1  cna-search-svc:1.0.0-87c76ad-277ad9eb91f4
+
+La URL del Webhook quedo en un archivo privado fuera del repositorio.
+No se incluye su contenido. Este listado prueba replicas en ejecucion;
+readiness, rechazo 401 y filtrado efectivo aun requieren prueba HTTP/red.

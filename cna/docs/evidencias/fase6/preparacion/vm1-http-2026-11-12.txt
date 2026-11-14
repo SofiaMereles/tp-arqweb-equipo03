@@ -1,0 +1,13 @@
+Preparacion B1: respuesta de BookStack en VM-1
+Fuente: salida de terminal aportada por el integrante en el chat el 12/11/2026.
+Prompt: arqweb@arqwebserver:~$
+
+Comando:
+curl -k -sS -o /dev/null -w 'BookStack login: HTTP %{http_code}\n' --resolve bookstack.local:443:127.0.0.1 https://bookstack.local/login
+
+Salida:
+BookStack login: HTTP 200
+
+Resultado: la ruta HTTPS /login responde en la VM existente con Host bookstack.local.
+El uso de -k omite verificar confianza del certificado; no valida el certificado doble SAN de B1.
+Login autenticado, creacion/edicion, backup y restauracion requieren comprobaciones separadas.

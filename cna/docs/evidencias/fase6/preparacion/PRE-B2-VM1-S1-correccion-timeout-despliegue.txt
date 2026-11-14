@@ -1,0 +1,20 @@
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+
+Actualización: docker service update --image
+cna-search-svc:1.0.0-87c76ad-021cea696896 --no-resolve-image --detach=false cna_search
+
+verify: Service cna_search converged
+
+Tarea actual: umt7vvsmhbwbi8czzzgikyfwu
+Servicio: cna_search.1
+Imagen: cna-search-svc:1.0.0-87c76ad-021cea696896
+Nodo: cna-node1
+Estado deseado: Running
+Estado observado: Running 52 seconds ago
+Error: vacío
+Puerto publicado: 8081 -> 8000/tcp
+Tarea anterior a9mutgh7hkuch3p2inhyv3fif, imagen 277ad9eb91f4: Shutdown.
+
+Resultado: nueva imagen desplegada y servicio convergente. F6-E4/CA-3
+siguen pendientes de repetir; la convergencia no acredita actualización
+del índice por Webhook ni tiempo inferior a cinco segundos.

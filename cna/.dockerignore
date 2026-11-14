@@ -1,0 +1,7 @@
+*
+!services/
+!services/**
+services/.venv/
+services/**/__pycache__/
+!contracts/
+!contracts/*.yaml

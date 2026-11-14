@@ -1,0 +1,15 @@
+Preparacion B1. Fuente: captura aportada por el integrante.
+Archivo: PRE-B1-VM2-red-solo-host.png
+Prompt: arqweb@cna-node1:~$
+
+ip -br addr:
+ens33: DOWN, sin IPv4 mostrada.
+ens37: UP, 192.168.145.130/24, direccion dinamica.
+
+ip route:
+192.168.145.0/24 dev ens37 proto kernel scope link src 192.168.145.130 metric 1024
+192.168.145.1 dev ens37 proto dhcp scope link src 192.168.145.130 metric 1024
+
+No aparece ruta por defecto: esta configuracion permite la red privada,
+no demuestra salida a Internet. VM-1 tenia 192.168.145.129 en el relevamiento.
+IP independiente comprobada en consola. Acceso SSH desde Windows pendiente.

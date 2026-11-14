@@ -1,0 +1,21 @@
+Fuente: captura PRE-B1-VM2-Docker-Compose.png inspeccionada en el proyecto.
+Nodo identificado por docker info: cna-node1.
+
+Docker Engine Community: 29.9.3
+Docker Compose: v5.7.1
+Sistema: linux/amd64
+Estado Swarm: inactive (todavia no se forma el cluster).
+Versiones de paquetes mostradas:
+docker-ce=5:29.9.3-1~ubuntu.26.04~resolute
+docker-ce-cli=5:29.9.3-1~ubuntu.26.04~resolute
+containerd.io=2.4.2-1~ubuntu.26.04~resolute
+docker-buildx-plugin=0.39.0-1~ubuntu.26.04~resolute
+docker-compose-plugin=5.7.1-1~ubuntu.26.04~resolute
+
+El resumen muestra instalacion finalizada, sin formar Swarm ni publicar puertos.
+No sustituye la evidencia F6-E1 del cluster final con ambos nodos activos.
+
+Consulta posterior de solo lectura en Windows:
+vmrun list: solo cna-node1 en ejecucion.
+Memoria libre observada: 2.36 GiB.
+Se continuara con VM-1 por separado; margen simultaneo aun pendiente de verificar.

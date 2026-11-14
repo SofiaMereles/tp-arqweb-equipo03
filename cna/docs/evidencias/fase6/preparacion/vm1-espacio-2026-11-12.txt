@@ -1,0 +1,16 @@
+Fuente: salida aportada por el integrante el 12/11/2026.
+Nodo: arqwebserver; usuario: arqweb.
+
+df -h /:
+/dev/mapper/ubuntu--vg-ubuntu--lv  9.8G total; 3.7G usados; 5.6G disponibles; 40% usado.
+
+sudo du -sh /var/www/bookstack /var/lib/mysql:
+224M /var/www/bookstack
+No existe /var/lib/mysql en esta instalacion.
+
+information_schema.TABLES para bookstack_db:
+InnoDB: 41 tablas.
+
+La ubicacion de datos se consultara mediante SHOW VARIABLES LIKE 'datadir'.
+La ruta ausente no implica que MariaDB este detenido.
+Backup y restauracion todavia pendientes.

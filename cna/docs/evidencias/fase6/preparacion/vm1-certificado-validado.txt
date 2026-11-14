@@ -1,0 +1,22 @@
+Fuente: salida de terminal aportada por el integrante en esta conversación.
+Nodo: arqwebserver (VM-1).
+
+openssl x509 -in /etc/ssl/certs/bookstack.crt -noout -ext subjectAltName
+X509v3 Subject Alternative Name:
+    DNS:bookstack.local, DNS:api.bookstack.local
+
+openssl s_client con -tls1_3, -verify_hostname bookstack.local,
+-verify_return_error y -CAfile /etc/ssl/certs/bookstack.crt:
+Protocol version: TLSv1.3
+Ciphersuite: TLS_AES_256_GCM_SHA384
+Verification: OK
+Verified peername: bookstack.local
+
+curl con --cacert /etc/ssl/certs/bookstack.crt y resolución local:
+BookStack login: HTTP 200
+
+La comprobación inicial inmediatamente posterior a la recarga dio error 18;
+la comprobación posterior anterior fue satisfactoria. Causa no determinada.
+El integrante confirmó después que terminó la comprobación indicada para
+api.bookstack.local; su salida detallada aún no fue aportada como texto.
+Captura localizada: F6-E3-certificado-doble-san.png en preparacion/.

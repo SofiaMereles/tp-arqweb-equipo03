@@ -1,0 +1,14 @@
+Fuente: salida aportada por el integrante desde arqweb@cna-node1.
+Comando: sudo bash ~/tp2-b2-s1/cna/deploy/b2-search/preparar-worker.sh
+Fecha de los logs aportados: 2026-11-13T21:30:07Z.
+
+Ran 33 tests in 2.029s
+OK
+
+Imagen S1 lista en VM-2: cna-search-svc:1.0.0-87c76ad-277ad9eb91f4
+Pruebas Linux completadas; pendiente despliegue desde VM-1.
+
+Incluye 19 pruebas S1 y las 14 de S2. Entre las últimas pruebas aprobadas:
+contrato de respuesta, cero coincidencias, borrado por evento, deduplicación,
+fallo de carga inicial sin vaciar el índice y rechazo de eventos antiguos.
+Estas pruebas no declaran aún operativo el índice real ni aprobada F6-E4.

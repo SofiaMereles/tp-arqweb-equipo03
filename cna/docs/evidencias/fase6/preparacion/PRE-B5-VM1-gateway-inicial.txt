@@ -1,0 +1,11 @@
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+Comando: sudo bash ~/b5-gateway/instalar-gateway-vm1.sh
+2026-11-13T23:40:47+00:00
+
+Nginx: syntax is ok; configuration file test is successful.
+Hostname api.bookstack.local does match certificate.
+Gateway API: TLS 1.3 verificado y ruta /v2/search responde HTTP 401 sin clave, como corresponde.
+BookStack nativo /login: HTTP 200 con certificado verificado.
+Configuracion: /etc/nginx/conf.d/cna-api.conf
+Respaldo y comprobacion: /var/backups/cna-gateway.W9fWex
+Pendiente: consulta autenticada y edicion real F6-E4. B5 completo aun no se declara aprobado.

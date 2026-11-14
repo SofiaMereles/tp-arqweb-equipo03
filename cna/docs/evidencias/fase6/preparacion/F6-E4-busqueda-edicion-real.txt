@@ -1,0 +1,18 @@
+Fuente: salida aportada por el integrante desde arqweb@cna-node1.
+Comando: sudo bash ~/b5-gateway/f6e4-edicion-worker.sh 3
+
+alfa: la pagina ya no aparece; beta: pagina encontrada.
+Evento real recibido de JetStream: {"type": "bookstack.page.updated", "payload": {"actor": {"id": 1, "name": "Admin"}, "book_id": 2, "page_id": 3, "source_revision": 5}, "version": "1.0", "event_id": "d8521090-bb3d-4d65-a4b7-728fec445414", "request_id": "57fcb693f916427487ff019231bfe52a", "occurred_at": "2026-11-14T00:16:51.000000Z"}
+Evento persistido por S1: d8521090-bb3d-4d65-a4b7-728fec445414
+Request ID de la consulta gateway: e108cb3dfe503e96cb6e4bc509639958
+updated_at del monolito: 2026-11-14T00:16:50.000000Z ; Date del gateway: Sat, 14 Nov 2026 00:16:53 GMT
+Cota conservadora edicion -> respuesta gateway: 4.0 segundos.
+PASS F6-E4: cambio real alfa -> beta visible via gateway, con evento procesado por S1.
+PASS CA-3: cota conservadora menor de 5 s; no hubo reconciliacion REST durante la prueba.
+arqweb@cna-node1:~$
+
+Alcance: actualización real de la página 3 por Webhook y JetStream, consumo
+confirmado en search_events y consulta por gateway. El tiempo es una cota
+conservadora que agrega un segundo a Date por su resolución, no una medición
+exacta de latencia ni un percentil. No acredita aún borrado de páginas,
+auditoría de este evento, DLQ, exportación ni medios.

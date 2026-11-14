@@ -1,0 +1,17 @@
+Fuente: salida aportada por el integrante, ejecutada en VM-1 arqwebserver.
+El prefijo del archivo sigue la nomenclatura elegida por el equipo; la
+operacion de control se ejecuto en VM-1 y la tarea reemplazada corre en VM-2.
+
+Comandos:
+sudo docker service ps cna_audit
+sudo docker service update --force --detach=false cna_audit
+sudo docker service ps cna_audit
+
+Antes: ua2izsnx8k8i cna_audit.1 cna-node1 Running.
+Swarm: Service cna_audit converged.
+Despues: 0nriqr2z2q25 cna_audit.1 cna-node1 Running.
+Tarea anterior: ua2izsnx8k8i Shutdown.
+Imagen conservada: cna-audit-svc:1.0.0-87c76ad-db4af96523a3.
+
+El reemplazo esta comprobado; falta consultar el mismo registro para
+confirmar su persistencia sin volver a publicar el evento.

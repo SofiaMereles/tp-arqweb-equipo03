@@ -1,0 +1,20 @@
+Fuente: salida aportada por el integrante desde arqweb@arqwebserver.
+Origen autorizado: VM-1, direccion privada 192.168.145.129.
+
+GET http://192.168.145.130:8081/readyz
+{"status":"ready","service":"search-svc"}
+HTTP 200
+
+GET http://192.168.145.130:8085/readyz
+{"status":"ready","service":"event-bridge"}
+HTTP 200
+
+POST http://192.168.145.130:8085/internal/webhooks/bookstack
+Content-Type: application/json
+Cuerpo: {}
+Sin token.
+{"error":{"code":"unauthorized","message":"Credencial ausente o inválida.","request_id":"da7618ef152e4be8aa09e88fd2c8ca87"}}
+HTTP 401
+
+Readiness y rechazo sin token comprobados. Falta comprobar bloqueo desde
+origen no autorizado y configurar los Webhooks reales en BookStack.

@@ -1,0 +1,12 @@
+Fuente: captura aportada por el integrante; 12/11/2026.
+Nodo del prompt: cna-node1; usuario: arqweb.
+Evidencia: PRE-B1-VM2-claves-SSH.png (o variante -verificacion si se preservo una captura previa).
+
+La salida de ssh-keygen -A informa generacion de claves RSA, ECDSA y ED25519.
+La captura muestra /usr/sbin/sshd -t sin errores, seguido de reinicio de ssh.
+systemctl is-active ssh: active.
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub muestra huella publica SHA256 y tipo ED25519.
+No se publican claves privadas.
+
+Configuracion y servicio comprobados en consola; acceso SSH desde Windows aun pendiente.
+Se habilitara primero solo el adaptador de red privada Solo host.
